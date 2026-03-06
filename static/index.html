@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="description" content="Kisan Mitra - Your Digital Farming Assistant. Get crop information, news, and fertilizer details at your fingertips.">
+    <title>Kisan Mitra — Farmer's Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header" id="app-header">
+            <div class="logo-section">
+                <div class="logo-icon" id="logo-icon">
+                    <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M24 4C24 4 18 12 18 20C18 24 20 28 24 30C28 28 30 24 30 20C30 12 24 4 24 4Z" fill="#4ade80"/>
+                        <path d="M24 30V44" stroke="#22c55e" stroke-width="3" stroke-linecap="round"/>
+                        <path d="M16 36C16 36 20 32 24 34" stroke="#22c55e" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M32 34C32 34 28 30 24 32" stroke="#4ade80" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <h1>Kisan Mitra</h1>
+                    <p class="tagline">Your Digital Farming Assistant</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Menu Options Panel -->
+        <section class="menu-panel" id="menu-panel">
+            <h2 class="menu-title">Please choose:</h2>
+            <ul class="menu-list" id="menu-list">
+                <li class="menu-item" data-option="1" id="menu-option-1">
+                    <span class="menu-number">1</span>
+                    <span class="menu-label">Crop Information</span>
+                    <span class="menu-arrow">→</span>
+                </li>
+                <li class="menu-item" data-option="2" id="menu-option-2">
+                    <span class="menu-number">2</span>
+                    <span class="menu-label">Wheat News</span>
+                    <span class="menu-arrow">→</span>
+                </li>
+                <li class="menu-item" data-option="3" id="menu-option-3">
+                    <span class="menu-number">3</span>
+                    <span class="menu-label">Fertilizer Information</span>
+                    <span class="menu-arrow">→</span>
+                </li>
+            </ul>
+        </section>
+
+        <!-- Display Area -->
+        <section class="display-area" id="display-area">
+            <div class="display-label">Enter Number</div>
+            <div class="display-value" id="display-value">_</div>
+            <div class="display-status" id="display-status">Press a number to begin</div>
+        </section>
+
+        <!-- Response Area (hidden by default, shown after submit) -->
+        <section class="response-area hidden" id="response-area">
+            <div class="response-card" id="response-card">
+                <div class="response-icon" id="response-icon">📋</div>
+                <div class="response-text" id="response-text"></div>
+            </div>
+        </section>
+
+        <!-- Numpad -->
+        <section class="numpad-section" id="numpad-section">
+            <div class="numpad-grid" id="numpad-grid">
+                <button class="numpad-btn num-btn" data-value="7" id="btn-7">7</button>
+                <button class="numpad-btn num-btn" data-value="8" id="btn-8">8</button>
+                <button class="numpad-btn num-btn" data-value="9" id="btn-9">9</button>
+                <button class="numpad-btn num-btn" data-value="4" id="btn-4">4</button>
+                <button class="numpad-btn num-btn" data-value="5" id="btn-5">5</button>
+                <button class="numpad-btn num-btn" data-value="6" id="btn-6">6</button>
+                <button class="numpad-btn num-btn" data-value="1" id="btn-1">1</button>
+                <button class="numpad-btn num-btn" data-value="2" id="btn-2">2</button>
+                <button class="numpad-btn num-btn" data-value="3" id="btn-3">3</button>
+                <button class="numpad-btn action-btn clear-btn" data-value="C" id="btn-clear">C</button>
+                <button class="numpad-btn num-btn" data-value="0" id="btn-0">0</button>
+                <button class="numpad-btn action-btn submit-btn" data-value="OK" id="btn-submit">✓</button>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="app-footer" id="app-footer">
+            <p>Kisan Mitra &copy; 2026 — Empowering Farmers</p>
+        </footer>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
