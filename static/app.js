@@ -21,9 +21,16 @@
     const MAX_DIGITS = 4;
 
     const menuMeta = {
-        '1': { label: 'Crop Information', icon: '🌾' },
-        '2': { label: 'Wheat News', icon: '📰' },
-        '3': { label: 'Fertilizer Information', icon: '🧪' },
+        '1': { label: 'गेंहू के फसल की जानकारी', icon: '🌾' },
+        '2': { label: 'किसान समाचार', icon: '📰' },
+        '3': { label: 'कपास की खेती में उपयोग होने वाले उर्वरक', icon: '🧪' },
+        '4': { label: 'आज का मंडी भाव', icon: '💰' },
+        '5': { label: 'मौसम की जानकारी', icon: '🌤️' },
+        '6': { label: 'फसल रोग पहचान', icon: '🔬' },
+        '7': { label: 'सिंचाई के सुझाव', icon: '💧' },
+        '8': { label: 'मिट्टी की जांच', icon: '🪨' },
+        '9': { label: 'सरकारी किसान योजनाएं', icon: '🏛️' },
+        '10': { label: 'फसल बीमा जानकारी', icon: '🛡️' },
     };
 
     // ===== DISPLAY FUNCTIONS =====
@@ -34,10 +41,10 @@
         displayValue.classList.add('pop');
 
         if (currentInput) {
-            displayStatus.textContent = 'Press ✓ to confirm or C to clear';
+            displayStatus.textContent = '✓ दबाएं पुष्टि के लिए या C दबाएं मिटाने के लिए';
             displayStatus.classList.add('active');
         } else {
-            displayStatus.textContent = 'Press a number to begin';
+            displayStatus.textContent = 'शुरू करने के लिए नंबर दबाएं';
             displayStatus.classList.remove('active');
         }
 
@@ -51,9 +58,9 @@
     }
 
     function showLoading(option) {
-        const meta = menuMeta[option] || { icon: '⏳', label: 'Loading' };
+        const meta = menuMeta[option] || { icon: '⏳', label: 'लोड हो रहा है' };
         responseIcon.textContent = '⏳';
-        responseText.innerHTML = `<span class="loading-dots">Asking Gemini about <strong>${meta.label}</strong></span>`;
+        responseText.innerHTML = `<span class="loading-dots"><strong>${meta.label}</strong> के बारे में पूछ रहे हैं...</span>`;
         responseArea.classList.remove('hidden');
         responseArea.style.animation = 'none';
         void responseArea.offsetWidth;
@@ -104,9 +111,9 @@
 
         const option = currentInput;
 
-        // Only options 1–3 call Gemini
+        // Only valid options 1–10 call Groq
         if (!menuMeta[option]) {
-            showError(`Option "${option}" is not available. Please enter 1, 2, or 3.`);
+            showError(`विकल्प "${option}" उपलब्ध नहीं है। कृपया 1 से 10 के बीच नंबर दर्ज करें।`);
             currentInput = '';
             updateDisplay();
             return;
@@ -126,8 +133,10 @@
             }
             const data = await res.json();
             showResponse(option, data.result);
+            // Read the Hindi response aloud
+            speakHindi(data.result);
         } catch (err) {
-            showError(`Error: ${err.message}. Please try again.`);
+            showError(`त्रुटि: ${err.message}। कृपया पुनः प्रयास करें।`);
         } finally {
             isLoading = false;
             setNumpadDisabled(false);
@@ -191,6 +200,90 @@
         if (now - lastTap < 300) e.preventDefault();
         lastTap = now;
     }, { passive: false });
+
+    // ===== VOICE / TTS (Web Speech API — Hindi) =====
+    const voiceBtn = document.getElementById('voice-greeting-btn');
+    const voiceBtnIcon = document.getElementById('voice-btn-icon');
+    const voiceBtnLabel = document.getElementById('voice-btn-label');
+    let isSpeaking = false;
+
+    // Pick the best Hindi voice available
+    function getHindiVoice() {
+        const voices = window.speechSynthesis.getVoices();
+        return voices.find(v => v.lang === 'hi-IN' && v.name.includes('Google'))
+            || voices.find(v => v.lang === 'hi-IN')
+            || voices.find(v => v.lang.startsWith('hi'))
+            || null;
+    }
+
+    // General-purpose Hindi TTS helper
+    function speakHindi(text, onEnd) {
+        if (!('speechSynthesis' in window)) return;
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'hi-IN';
+        utterance.rate = 0.95;
+        utterance.pitch = 1.0;
+        utterance.volume = 1;
+        const hindiVoice = getHindiVoice();
+        if (hindiVoice) utterance.voice = hindiVoice;
+        if (onEnd) utterance.onend = onEnd;
+        window.speechSynthesis.speak(utterance);
+    }
+
+    // Stop any ongoing speech
+    function stopSpeaking() {
+        window.speechSynthesis.cancel();
+        setSpeakingState(false);
+    }
+
+    function speakGreeting() {
+        if (!('speechSynthesis' in window)) {
+            console.warn('SpeechSynthesis API not supported in this browser.');
+            return;
+        }
+
+        // Toggle off if already speaking
+        if (isSpeaking) {
+            stopSpeaking();
+            return;
+        }
+
+        window.speechSynthesis.cancel();
+        setSpeakingState(true);
+
+        const greetingText = 'किसान मित्र में आपका स्वागत है, आपका किसान सहायक।';
+        const menuText = 'विकल्प 1: गेंहू के फसल की जानकारी। विकल्प 2: किसान समाचार। विकल्प 3: कपास उर्वरक। विकल्प 4: मंडी भाव। विकल्प 5: मौसम जानकारी। विकल्प 6: फसल रोग। विकल्प 7: सिंचाई सुझाव। विकल्प 8: मिट्टी जांच। विकल्प 9: सरकारी योजनाएं। विकल्प 10: फसल बीमा।';
+
+        function doSpeak() {
+            speakHindi(greetingText);
+            speakHindi(menuText, () => setSpeakingState(false));
+        }
+
+        // Voices may load async
+        if (window.speechSynthesis.getVoices().length > 0) {
+            doSpeak();
+        } else {
+            window.speechSynthesis.addEventListener('voiceschanged', function handler() {
+                window.speechSynthesis.removeEventListener('voiceschanged', handler);
+                doSpeak();
+            });
+        }
+    }
+
+    function setSpeakingState(speaking) {
+        isSpeaking = speaking;
+        if (speaking) {
+            voiceBtn.classList.add('speaking');
+            voiceBtnIcon.textContent = '⏹️';
+            voiceBtnLabel.textContent = 'रुकें';
+        } else {
+            voiceBtn.classList.remove('speaking');
+            voiceBtnIcon.textContent = '🔊';
+            voiceBtnLabel.textContent = 'मेनू सुनें';
+        }
+    }
+
+    voiceBtn.addEventListener('click', speakGreeting);
 
     // ===== INIT =====
     updateDisplay();

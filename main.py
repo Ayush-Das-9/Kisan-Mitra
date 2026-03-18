@@ -29,9 +29,16 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 # ── Prompts for each menu option ──────────────────────────────────────────────
 PROMPTS = {
-    "1": "Give me basic crop information about wheat in exactly 20 words. Be concise and farmer-friendly.",
-    "2": "Give me 1 recent news headline about wheat crop in 10 to 15 words. Just the headline, nothing else.",
-    "3": "Tell me about the best fertilizer for wheat crop in exactly 20 words. Be concise and practical.",
+    "1": "गेहूं की फसल के बारे में बुनियादी जानकारी ठीक 20 शब्दों में हिंदी में दें। किसान के अनुकूल भाषा में लिखें।",
+    "2": "किसानों से संबंधित एक हालिया सनसनीखेज समाचार शीर्षक हिंदी में लिखें, जो 20 से 30 शब्दों का हो। केवल शीर्षक लिखें किसी भी न्यूज़ पेपर की, और कुछ नहीं।",
+    "3": "कपास की खेती में उपयोग होने वाले उर्वरक के बारे में ठीक 20 शब्दों में हिंदी में बताएं। संक्षिप्त और व्यावहारिक रहें।",
+    "4": "आज के प्रमुख अनाज मंडियों में गेहूं, धान और सरसों के अनुमानित भाव ठीक 20 शब्दों में हिंदी में बताएं।",
+    "5": "उत्तर भारत के किसानों के लिए आज के मौसम का संक्षिप्त अनुमान ठीक 20 शब्दों में हिंदी में दें।",
+    "6": "गेहूं और धान की फसल में लगने वाले 2 प्रमुख रोगों के नाम और एक-एक लक्षण ठीक 20 शब्दों में हिंदी में बताएं।",
+    "7": "खरीफ फसलों के लिए सही सिंचाई के 2 व्यावहारिक सुझाव ठीक 20 शब्दों में हिंदी में दें।",
+    "8": "मिट्टी की जांच क्यों जरूरी है और इसे कहाँ करवाएं — ठीक 20 शब्दों में हिंदी में बताएं।",
+    "9": "किसानों के लिए 2 प्रमुख सरकारी योजनाओं के नाम और एक-एक लाभ ठीक 20 शब्दों में हिंदी में बताएं।",
+    "10": "प्रधानमंत्री फसल बीमा योजना के बारे में ठीक 20 शब्दों में हिंदी में बताएं। सरल और स्पष्ट भाषा में।",
 }
 
 
@@ -54,7 +61,7 @@ async def get_menu_response(option: str):
         completion = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[
-                {"role": "system", "content": "You are a helpful agricultural assistant."},
+                {"role": "system", "content": "You are a helpful agricultural assistant. Always respond in Hindi using Devanagari script."},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=100,

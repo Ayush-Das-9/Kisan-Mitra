@@ -97,6 +97,70 @@ body::before {
     gap: var(--pad-md);
 }
 
+/* ===== VOICE GREETING BUTTON ===== */
+.voice-greeting-wrapper {
+    display: flex;
+    justify-content: center;
+    animation: fadeSlideUp 500ms 80ms ease both;
+}
+
+.voice-greeting-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--pad-sm);
+    padding: 10px 22px;
+    border: 1px solid rgba(74, 222, 128, 0.25);
+    border-radius: var(--radius-xl);
+    background: rgba(74, 222, 128, 0.08);
+    color: var(--green-300);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    outline: none;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    animation: gentlePulseGlow 2.5s ease-in-out infinite;
+}
+
+.voice-greeting-btn:hover {
+    background: rgba(74, 222, 128, 0.15);
+    border-color: rgba(74, 222, 128, 0.4);
+    box-shadow: 0 0 20px rgba(74, 222, 128, 0.15);
+    transform: translateY(-1px);
+}
+
+.voice-greeting-btn:active {
+    transform: scale(0.96);
+}
+
+.voice-greeting-btn.speaking {
+    background: rgba(74, 222, 128, 0.18);
+    border-color: rgba(74, 222, 128, 0.5);
+    box-shadow: 0 0 24px rgba(74, 222, 128, 0.25);
+    animation: none;
+}
+
+.voice-btn-icon {
+    font-size: 1.1rem;
+    transition: transform var(--transition-normal);
+}
+
+.voice-greeting-btn.speaking .voice-btn-icon {
+    animation: speakerPulse 0.8s ease-in-out infinite;
+}
+
+@keyframes gentlePulseGlow {
+    0%, 100% { box-shadow: 0 0 8px rgba(74, 222, 128, 0.05); }
+    50% { box-shadow: 0 0 18px rgba(74, 222, 128, 0.15); }
+}
+
+@keyframes speakerPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+}
+
 /* ===== HEADER ===== */
 .app-header {
     text-align: center;
