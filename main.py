@@ -1,3 +1,5 @@
+import base64
+import mimetypes
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
@@ -36,7 +38,6 @@ PROMPTS = {
     "5": "उत्तर भारत के किसानों के लिए आज के मौसम का संक्षिप्त अनुमान ठीक 20 शब्दों में हिंदी में दें।",
     "6": "गेहूं और धान की फसल में लगने वाले 2 प्रमुख रोगों के नाम और एक-एक लक्षण ठीक 20 शब्दों में हिंदी में बताएं।",
     "7": "खरीफ फसलों के लिए सही सिंचाई के 2 व्यावहारिक सुझाव ठीक 20 शब्दों में हिंदी में दें।",
-    "8": "मिट्टी की जांच क्यों जरूरी है और इसे कहाँ करवाएं — ठीक 20 शब्दों में हिंदी में बताएं।",
     "9": "किसानों के लिए 2 प्रमुख सरकारी योजनाओं के नाम और एक-एक लाभ ठीक 20 शब्दों में हिंदी में बताएं।",
     "10": "प्रधानमंत्री फसल बीमा योजना के बारे में ठीक 20 शब्दों में हिंदी में बताएं। सरल और स्पष्ट भाषा में।",
 }
@@ -75,18 +76,61 @@ async def get_menu_response(option: str):
 @app.post("/api/upload-image")
 async def upload_image(file: UploadFile = File(...)):
     """
-    Placeholder endpoint for image-based disease detection.
+    Accepts an image, sends it to Groq Llama 4 Scout vision model,
+    and returns the plant disease diagnosis in Hindi.
     """
     contents = await file.read()
-    return JSONResponse(
-        content={
-            "status": "success",
-            "message": "Image received. ML analysis coming soon!",
-            "filename": file.filename,
-            "size_bytes": len(contents),
-            "diagnosis": None,
-        }
-    )
+
+    # Guess MIME type from filename
+    mime_type, _ = mimetypes.guess_type(file.filename or "image.jpg")
+    if mime_type is None:
+        mime_type = "image/jpeg"
+
+    # Convert to base64 data URL
+    encoded = base64.b64encode(contents).decode("utf-8")
+    image_data_url = f"data:{mime_type};base64,{encoded}"
+
+    try:
+        completion = client.chat.completions.create(
+            model="meta-llama/llama-4-scout-17b-16e-instruct",
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are an agricultural plant disease expert. "
+                        "Reply ONLY with the disease name in Hindi, exactly one short sentence, nothing else. "
+                        "No explanation, no symptoms, no extra words."
+                    )
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "इस फसल की तस्वीर देखकर केवल बीमारी का नाम हिंदी में एक वाक्य में बताओ।"
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": image_data_url
+                            }
+                        }
+                    ]
+                }
+            ],
+            temperature=0,
+            max_completion_tokens=50,
+            top_p=1,
+        )
+        result_text = completion.choices[0].message.content.strip()
+        return JSONResponse(
+            content={
+                "status": "success",
+                "result": result_text,
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Groq Vision API error: {str(e)}")
 
 
 

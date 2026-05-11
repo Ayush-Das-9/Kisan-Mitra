@@ -28,7 +28,7 @@
         '5': { label: 'मौसम की जानकारी', icon: '🌤️' },
         '6': { label: 'फसल रोग पहचान', icon: '🔬' },
         '7': { label: 'सिंचाई के सुझाव', icon: '💧' },
-        '8': { label: 'मिट्टी की जांच', icon: '🪨' },
+        '8': { label: 'फोटो से रोग पहचान', icon: '📷' },
     };
 
     // ===== TICKER =====
@@ -40,7 +40,7 @@
         '5. मौसम की जानकारी',
         '6. फसल रोग पहचान',
         '7. सिंचाई के सुझाव',
-        '8. मिट्टी की जांच',
+        '8. फोटो से रोग पहचान',
     ];
     let tickerIndex = 0;
 
@@ -132,11 +132,19 @@
 
         const option = currentInput;
 
-        // Only valid options 1–8 call Groq (9 does nothing)
+        // Only valid options 1–8 call Groq
         if (!menuMeta[option]) {
             showError(`विकल्प "${option}" उपलब्ध नहीं है। कृपया 1 से 8 के बीच नंबर दर्ज करें।`);
             currentInput = '';
             updateDisplay();
+            return;
+        }
+
+        // Option 8: Image upload for disease detection
+        if (option === '8') {
+            currentInput = '';
+            updateDisplay();
+            triggerImageUpload();
             return;
         }
 
@@ -162,6 +170,50 @@
             isLoading = false;
             setNumpadDisabled(false);
         }
+    }
+
+    // ===== IMAGE UPLOAD FOR OPTION 8 =====
+    function triggerImageUpload() {
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/*';
+        fileInput.capture = 'environment'; // prefer rear camera on mobile
+        fileInput.style.display = 'none';
+        document.body.appendChild(fileInput);
+
+        fileInput.addEventListener('change', async function () {
+            const file = fileInput.files[0];
+            document.body.removeChild(fileInput);
+            if (!file) return;
+
+            isLoading = true;
+            setNumpadDisabled(true);
+            showLoading('8');
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const res = await fetch('/api/upload-image', {
+                    method: 'POST',
+                    body: formData,
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || 'Server error');
+                }
+                const data = await res.json();
+                showResponse('8', data.result);
+                speakHindi(data.result);
+            } catch (err) {
+                showError(`त्रुटि: ${err.message}। कृपया पुनः प्रयास करें।`);
+            } finally {
+                isLoading = false;
+                setNumpadDisabled(false);
+            }
+        });
+
+        fileInput.click();
     }
 
     function setNumpadDisabled(disabled) {
@@ -273,7 +325,7 @@
         setSpeakingState(true);
 
         const greetingText = 'किसान मित्र में आपका स्वागत है, आपका किसान सहायक।';
-        const menuText = 'विकल्प 1: गेंहू के फसल की जानकारी। विकल्प 2: किसान समाचार। विकल्प 3: कपास उर्वरक। विकल्प 4: मंडी भाव। विकल्प 5: मौसम जानकारी। विकल्प 6: फसल रोग। विकल्प 7: सिंचाई सुझाव। विकल्प 8: मिट्टी जांच।';
+        const menuText = 'विकल्प 1: गेंहू के फसल की जानकारी। विकल्प 2: किसान समाचार। विकल्प 3: कपास उर्वरक। विकल्प 4: मंडी भाव। विकल्प 5: मौसम जानकारी। विकल्प 6: फसल रोग। विकल्प 7: सिंचाई सुझाव। विकल्प 8: फोटो से रोग पहचान।';
 
         function doSpeak() {
             speakHindi(greetingText);
