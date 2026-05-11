@@ -13,7 +13,7 @@
     const responseIcon = document.getElementById('response-icon');
     const responseText = document.getElementById('response-text');
     const numpadGrid = document.getElementById('numpad-grid');
-    const menuItems = document.querySelectorAll('.menu-item');
+    const tickerElement = document.getElementById('ticker-text');
 
     // ===== STATE =====
     let currentInput = '';
@@ -29,9 +29,35 @@
         '6': { label: 'फसल रोग पहचान', icon: '🔬' },
         '7': { label: 'सिंचाई के सुझाव', icon: '💧' },
         '8': { label: 'मिट्टी की जांच', icon: '🪨' },
-        '9': { label: 'सरकारी किसान योजनाएं', icon: '🏛️' },
-        '10': { label: 'फसल बीमा जानकारी', icon: '🛡️' },
     };
+
+    // ===== TICKER =====
+    const tickerItems = [
+        '1. गेंहू के फसल की जानकारी',
+        '2. किसान समाचार',
+        '3. कपास की खेती में उपयोग होने वाले उर्वरक',
+        '4. आज का मंडी भाव',
+        '5. मौसम की जानकारी',
+        '6. फसल रोग पहचान',
+        '7. सिंचाई के सुझाव',
+        '8. मिट्टी की जांच',
+    ];
+    let tickerIndex = 0;
+
+    setInterval(() => {
+        tickerIndex++;
+        if (tickerIndex >= tickerItems.length) {
+            tickerIndex = 0;
+        }
+        // Fade out, swap text, fade in
+        tickerElement.classList.add('ticker-fade-out');
+        setTimeout(() => {
+            tickerElement.innerText = tickerItems[tickerIndex];
+            tickerElement.classList.remove('ticker-fade-out');
+            tickerElement.classList.add('ticker-fade-in');
+            setTimeout(() => tickerElement.classList.remove('ticker-fade-in'), 400);
+        }, 300);
+    }, 3000);
 
     // ===== DISPLAY FUNCTIONS =====
     function updateDisplay() {
@@ -48,13 +74,6 @@
             displayStatus.classList.remove('active');
         }
 
-        highlightMenu(currentInput);
-    }
-
-    function highlightMenu(input) {
-        menuItems.forEach(item => {
-            item.classList.toggle('active', item.getAttribute('data-option') === input);
-        });
     }
 
     function showLoading(option) {
@@ -95,6 +114,8 @@
     }
 
     function handleClear() {
+        // Stop any ongoing speech when C is pressed
+        stopSpeaking();
         if (isLoading) return;
         currentInput = '';
         updateDisplay();
@@ -111,9 +132,9 @@
 
         const option = currentInput;
 
-        // Only valid options 1–10 call Groq
+        // Only valid options 1–8 call Groq (9 does nothing)
         if (!menuMeta[option]) {
-            showError(`विकल्प "${option}" उपलब्ध नहीं है। कृपया 1 से 10 के बीच नंबर दर्ज करें।`);
+            showError(`विकल्प "${option}" उपलब्ध नहीं है। कृपया 1 से 8 के बीच नंबर दर्ज करें।`);
             currentInput = '';
             updateDisplay();
             return;
@@ -252,7 +273,7 @@
         setSpeakingState(true);
 
         const greetingText = 'किसान मित्र में आपका स्वागत है, आपका किसान सहायक।';
-        const menuText = 'विकल्प 1: गेंहू के फसल की जानकारी। विकल्प 2: किसान समाचार। विकल्प 3: कपास उर्वरक। विकल्प 4: मंडी भाव। विकल्प 5: मौसम जानकारी। विकल्प 6: फसल रोग। विकल्प 7: सिंचाई सुझाव। विकल्प 8: मिट्टी जांच। विकल्प 9: सरकारी योजनाएं। विकल्प 10: फसल बीमा।';
+        const menuText = 'विकल्प 1: गेंहू के फसल की जानकारी। विकल्प 2: किसान समाचार। विकल्प 3: कपास उर्वरक। विकल्प 4: मंडी भाव। विकल्प 5: मौसम जानकारी। विकल्प 6: फसल रोग। विकल्प 7: सिंचाई सुझाव। विकल्प 8: मिट्टी जांच।';
 
         function doSpeak() {
             speakHindi(greetingText);
@@ -287,16 +308,5 @@
 
     // ===== INIT =====
     updateDisplay();
-
-    // Staggered entrance for menu items
-    menuItems.forEach((item, i) => {
-        item.style.opacity = '0';
-        item.style.transform = 'translateX(-12px)';
-        setTimeout(() => {
-            item.style.transition = 'all 400ms ease';
-            item.style.opacity = '1';
-            item.style.transform = 'translateX(0)';
-        }, 200 + i * 100);
-    });
 
 })();
