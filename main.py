@@ -7,6 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from groq import Groq
 import os
+import asyncio
+import urllib.request
 
 load_dotenv()
 
@@ -25,6 +27,20 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+async def keep_alive():
+    while True:
+        await asyncio.sleep(12 * 60)  # 12 minutes
+        try:
+            # Using asyncio.to_thread to avoid blocking the event loop (Python 3.9+)
+            await asyncio.to_thread(urllib.request.urlopen, "https://webapp-python.onrender.com")
+            print("Pinged https://webapp-python.onrender.com to keep alive.")
+        except Exception as e:
+            print(f"Failed to ping keep-alive: {e}")
+
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(keep_alive())
 
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
@@ -135,5 +151,6 @@ async def upload_image(file: UploadFile = File(...)):
 
 
 if __name__ == "__main__":
+    
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
