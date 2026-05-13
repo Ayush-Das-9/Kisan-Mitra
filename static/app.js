@@ -20,6 +20,11 @@
     let isLoading = false;
     const MAX_DIGITS = 4;
 
+    // Voice chat state
+    let isRecording = false;
+    let mediaRecorder = null;
+    let audioChunks = [];
+
     const menuMeta = {
         '1': { label: 'गेंहू के फसल की जानकारी', icon: '🌾' },
         '2': { label: 'किसान समाचार', icon: '📰' },
@@ -29,6 +34,7 @@
         '6': { label: 'फसल रोग पहचान', icon: '🔬' },
         '7': { label: 'सिंचाई के सुझाव', icon: '💧' },
         '8': { label: 'फोटो से रोग पहचान', icon: '📷' },
+        '9': { label: 'AI से बात करें', icon: '🎙️' },
     };
 
     // ===== TICKER =====
@@ -41,6 +47,7 @@
         '6. फसल रोग पहचान',
         '7. सिंचाई के सुझाव',
         '8. फोटो से रोग पहचान',
+        '9. AI से बात करें',
     ];
     let tickerIndex = 0;
 
@@ -132,9 +139,9 @@
 
         const option = currentInput;
 
-        // Only valid options 1–8 call Groq
+        // Only valid options 1–9 call Groq
         if (!menuMeta[option]) {
-            showError(`विकल्प "${option}" उपलब्ध नहीं है। कृपया 1 से 8 के बीच नंबर दर्ज करें।`);
+            showError(`विकल्प "${option}" उपलब्ध नहीं है। कृपया 1 से 9 के बीच नंबर दर्ज करें।`);
             currentInput = '';
             updateDisplay();
             return;
@@ -145,6 +152,14 @@
             currentInput = '';
             updateDisplay();
             triggerImageUpload();
+            return;
+        }
+
+        // Option 9: Voice chat — start recording
+        if (option === '9') {
+            currentInput = '';
+            updateDisplay();
+            startVoiceRecording();
             return;
         }
 
@@ -223,6 +238,99 @@
         });
     }
 
+    // ===== VOICE CHAT (Push-to-Talk on Button 9) =====
+
+    async function startVoiceRecording() {
+        if (isRecording) return;
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            audioChunks = [];
+            mediaRecorder = new MediaRecorder(stream);
+
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) audioChunks.push(e.data);
+            };
+
+            mediaRecorder.onstop = async () => {
+                // Stop all mic tracks
+                stream.getTracks().forEach(t => t.stop());
+
+                const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+                audioChunks = [];
+                await sendVoiceChat(audioBlob);
+            };
+
+            mediaRecorder.start();
+            isRecording = true;
+
+            // Show recording UI
+            responseIcon.textContent = '🎙️';
+            responseText.innerHTML = '<span class="loading-dots"><strong>बोलिए...</strong> रुकने के लिए 9 दबाएं</span>';
+            responseArea.classList.remove('hidden');
+            document.getElementById('display-area').classList.add('recording');
+            const btn9 = document.getElementById('btn-9');
+            if (btn9) btn9.classList.add('recording-btn');
+
+        } catch (err) {
+            console.error('Mic access error:', err);
+            showError('माइक्रोफ़ोन की अनुमति नहीं मिली। कृपया अनुमति दें।');
+        }
+    }
+
+    function stopVoiceRecording() {
+        if (!isRecording || !mediaRecorder) return;
+        isRecording = false;
+        mediaRecorder.stop();
+
+        // Remove recording UI
+        document.getElementById('display-area').classList.remove('recording');
+        const btn9 = document.getElementById('btn-9');
+        if (btn9) btn9.classList.remove('recording-btn');
+    }
+
+    async function sendVoiceChat(audioBlob) {
+        isLoading = true;
+        setNumpadDisabled(true);
+
+        responseIcon.textContent = '⏳';
+        responseText.innerHTML = '<span class="loading-dots">आपकी आवाज़ समझ रहे हैं...</span>';
+
+        try {
+            const formData = new FormData();
+            formData.append('file', audioBlob, 'recording.webm');
+
+            const res = await fetch('/api/voice-chat', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.detail || 'Server error');
+            }
+
+            const data = await res.json();
+
+            // Show transcription + response
+            responseIcon.textContent = '🎙️';
+            responseText.innerHTML =
+                '<div style="margin-bottom:8px;color:rgba(134,239,172,0.6);font-size:0.85rem;">आपने कहा: ' +
+                data.transcription + '</div>' +
+                '<div>' + data.response + '</div>';
+            responseArea.classList.remove('hidden');
+
+            // Speak the response in Hindi
+            speakHindi(data.response);
+
+        } catch (err) {
+            showError(`त्रुटि: ${err.message}। कृपया पुनः प्रयास करें।`);
+        } finally {
+            isLoading = false;
+            setNumpadDisabled(false);
+        }
+    }
+
     // ===== EVENT LISTENERS =====
 
     // Numpad click (event delegation)
@@ -231,6 +339,13 @@
         if (!btn || btn.disabled) return;
 
         const value = btn.getAttribute('data-value');
+
+        // If recording, pressing 9 stops it
+        if (isRecording && value === '9') {
+            stopVoiceRecording();
+            return;
+        }
+
         if (value === 'C') {
             handleClear();
         } else if (value === 'OK') {
@@ -325,7 +440,7 @@
         setSpeakingState(true);
 
         const greetingText = 'किसान मित्र में आपका स्वागत है, आपका किसान सहायक।';
-        const menuText = 'विकल्प 1: गेंहू के फसल की जानकारी। विकल्प 2: किसान समाचार। विकल्प 3: कपास उर्वरक। विकल्प 4: मंडी भाव। विकल्प 5: मौसम जानकारी। विकल्प 6: फसल रोग। विकल्प 7: सिंचाई सुझाव। विकल्प 8: फोटो से रोग पहचान।';
+        const menuText = 'विकल्प 1: गेंहू के फसल की जानकारी। विकल्प 2: किसान समाचार। विकल्प 3: कपास उर्वरक। विकल्प 4: मंडी भाव। विकल्प 5: मौसम जानकारी। विकल्प 6: फसल रोग। विकल्प 7: सिंचाई सुझाव। विकल्प 8: फोटो से रोग पहचान। विकल्प 9: AI से बात करें।';
 
         function doSpeak() {
             speakHindi(greetingText);

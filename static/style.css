@@ -538,6 +538,30 @@ body::before {
     }
 }
 
+/* ===== VOICE RECORDING STATE ===== */
+.display-area.recording {
+    border-color: rgba(239, 68, 68, 0.5);
+    box-shadow: 0 0 24px rgba(239, 68, 68, 0.2);
+    animation: recordingPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes recordingPulse {
+    0%, 100% { box-shadow: 0 0 16px rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.3); }
+    50% { box-shadow: 0 0 32px rgba(239, 68, 68, 0.35); border-color: rgba(239, 68, 68, 0.6); }
+}
+
+.numpad-btn.recording-btn {
+    background: rgba(239, 68, 68, 0.25) !important;
+    border-color: rgba(239, 68, 68, 0.5) !important;
+    color: var(--red-400) !important;
+    animation: recordingBtnPulse 1s ease-in-out infinite;
+}
+
+@keyframes recordingBtnPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
 /* ===== ACCESSIBILITY ===== */
 @media (prefers-reduced-motion: reduce) {
     *,

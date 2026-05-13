@@ -1,5 +1,6 @@
 import base64
 import mimetypes
+import logging
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
@@ -7,6 +8,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from groq import Groq
 import os
+
+# ── Logging setup ──────────────────────────────────────────────────────────────
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logger = logging.getLogger(__name__)
 import asyncio
 import urllib.request
 
@@ -149,8 +154,71 @@ async def upload_image(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Groq Vision API error: {str(e)}")
 
 
+# ── Voice Chat: STT + LLM pipeline ────────────────────────────────────────────
+@app.post("/api/voice-chat")
+async def voice_chat(file: UploadFile = File(...)):
+    """
+    Accepts audio from the browser mic, transcribes it via Groq Whisper,
+    sends the transcription to the LLM, and returns the text response.
+    Browser handles Hindi TTS via Web Speech API.
+    """
+    logger.info("Voice chat request received: %s", file.filename)
+
+    contents = await file.read()
+    if len(contents) < 1000:
+        logger.warning("Audio file too small (%d bytes), likely empty", len(contents))
+        raise HTTPException(status_code=400, detail="रिकॉर्डिंग बहुत छोटी है। कृपया पुनः बोलें।")
+
+    try:
+        # Step 1: Speech-to-Text via Groq Whisper
+        logger.info("Starting STT transcription...")
+        transcription = client.audio.transcriptions.create(
+            file=(file.filename or "recording.webm", contents),
+            model="whisper-large-v3-turbo",
+            language="hi",
+        )
+        user_text = transcription.text.strip()
+        logger.info("STT result: %s", user_text)
+
+        if not user_text:
+            raise HTTPException(status_code=400, detail="कोई आवाज़ नहीं सुनाई दी। कृपया पुनः बोलें।")
+
+        # Step 2: LLM response via Groq
+        logger.info("Sending to LLM...")
+        completion = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are Kisan Mitra, a helpful Hindi-speaking agricultural assistant. "
+                        "Always respond in Hindi using Devanagari script. "
+                        "Keep responses concise (2-3 sentences max). "
+                        "Be friendly and practical."
+                    ),
+                },
+                {"role": "user", "content": user_text},
+            ],
+            max_tokens=200,
+        )
+        response_text = completion.choices[0].message.content.strip()
+        logger.info("LLM response: %s", response_text)
+
+        return JSONResponse(
+            content={
+                "status": "success",
+                "transcription": user_text,
+                "response": response_text,
+            }
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Voice chat error: %s", str(e), exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Voice processing error: {str(e)}")
+
 
 if __name__ == "__main__":
-    
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
