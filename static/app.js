@@ -266,11 +266,11 @@
 
             // Show recording UI
             responseIcon.textContent = '🎙️';
-            responseText.innerHTML = '<span class="loading-dots"><strong>बोलिए...</strong> रुकने के लिए 9 दबाएं</span>';
+            responseText.innerHTML = '<span class="loading-dots"><strong>बोलिए...</strong> रुकने के लिए ✓ दबाएं</span>';
             responseArea.classList.remove('hidden');
             document.getElementById('display-area').classList.add('recording');
-            const btn9 = document.getElementById('btn-9');
-            if (btn9) btn9.classList.add('recording-btn');
+            const btnSubmit = document.getElementById('btn-submit');
+            if (btnSubmit) btnSubmit.classList.add('recording-btn');
 
         } catch (err) {
             console.error('Mic access error:', err);
@@ -285,8 +285,8 @@
 
         // Remove recording UI
         document.getElementById('display-area').classList.remove('recording');
-        const btn9 = document.getElementById('btn-9');
-        if (btn9) btn9.classList.remove('recording-btn');
+        const btnSubmit = document.getElementById('btn-submit');
+        if (btnSubmit) btnSubmit.classList.remove('recording-btn');
     }
 
     async function sendVoiceChat(audioBlob) {
@@ -340,8 +340,8 @@
 
         const value = btn.getAttribute('data-value');
 
-        // If recording, pressing 9 stops it
-        if (isRecording && value === '9') {
+        // If recording, pressing OK stops it
+        if (isRecording && value === 'OK') {
             stopVoiceRecording();
             return;
         }
