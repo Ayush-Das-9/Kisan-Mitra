@@ -27,6 +27,7 @@
 
     const menuMeta = {
         '1': { label: 'गेंहू के फसल की जानकारी', icon: '🌾' },
+        // '1' : { label: 'AI से बात करें', icon: '🎙️' },
         '2': { label: 'किसान समाचार', icon: '📰' },
         '3': { label: 'कपास की खेती में उपयोग होने वाले उर्वरक', icon: '🧪' },
         '4': { label: 'आज का मंडी भाव', icon: '💰' },
@@ -36,9 +37,10 @@
         '8': { label: 'फोटो से रोग पहचान', icon: '📷' },
         '9': { label: 'AI से बात करें', icon: '🎙️' },
     };
-
+    
     // ===== TICKER =====
     const tickerItems = [
+        // '1. AI से बात करें',
         '1. गेंहू के फसल की जानकारी',
         '2. किसान समाचार',
         '3. कपास की खेती में उपयोग होने वाले उर्वरक',
@@ -56,7 +58,6 @@
         if (tickerIndex >= tickerItems.length) {
             tickerIndex = 0;
         }
-        // Fade out, swap text, fade in
         tickerElement.classList.add('ticker-fade-out');
         setTimeout(() => {
             tickerElement.innerText = tickerItems[tickerIndex];
@@ -66,7 +67,7 @@
         }, 300);
     }, 3000);
 
-    // ===== DISPLAY FUNCTIONS =====
+    // DISPLAY FUNCTIONS 
     function updateDisplay() {
         displayValue.textContent = currentInput || '_';
         displayValue.classList.remove('pop');
@@ -156,7 +157,7 @@
         }
 
         // Option 9: Voice chat — start recording
-        if (option === '9') {
+        if (option === '1' || option === '9') {
             currentInput = '';
             updateDisplay();
             startVoiceRecording();

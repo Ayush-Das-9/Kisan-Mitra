@@ -54,7 +54,7 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 PROMPTS = {
     "1": "गेहूं की फसल के बारे में बुनियादी जानकारी ठीक 20 शब्दों में हिंदी में दें। किसान के अनुकूल भाषा में लिखें।",
     "2": "किसानों से संबंधित एक हालिया सनसनीखेज समाचार शीर्षक हिंदी में लिखें, जो 20 से 30 शब्दों का हो। केवल शीर्षक लिखें किसी भी न्यूज़ पेपर की, और कुछ नहीं।",
-    "3": "कपास की खेती में उपयोग होने वाले उर्वरक के बारे में ठीक 20 शब्दों में हिंदी में बताएं। संक्षिप्त और व्यावहारिक रहें।",
+    "3": "कपा स की खेती में उपयोग होने वाले उर्वरक के बारे में ठीक 20 शब्दों में हिंदी में बताएं। संक्षिप्त और व्यावहारिक रहें।",
     "4": "आज के प्रमुख अनाज मंडियों में गेहूं, धान और सरसों के अनुमानित भाव ठीक 20 शब्दों में हिंदी में बताएं।",
     "5": "उत्तर भारत के किसानों के लिए आज के मौसम का संक्षिप्त अनुमान ठीक 20 शब्दों में हिंदी में दें।",
     "6": "गेहूं और धान की फसल में लगने वाले 2 प्रमुख रोगों के नाम और एक-एक लक्षण ठीक 20 शब्दों में हिंदी में बताएं।",
@@ -81,14 +81,22 @@ async def get_menu_response(option: str):
 
     try:
         completion = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="qwen/qwen3.8-27b",
             messages=[
                 {"role": "system", "content": "You are a helpful agricultural assistant. Always respond in Hindi using Devanagari script."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=100,
+            temperature=0.6,
+            max_completion_tokens=2048,
+            top_p=0.95,
+            reasoning_effort="default",
+            stream=True,
+            stop=None,
         )
-        text = completion.choices[0].message.content.strip()
+        text = ""
+        for chunk in completion:
+            text += chunk.choices[0].delta.content or ""
+        text = text.strip()
         return JSONResponse(content={"status": "success", "option": option, "result": text})
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Groq API error: {str(e)}")
@@ -97,61 +105,57 @@ async def get_menu_response(option: str):
 @app.post("/api/upload-image")
 async def upload_image(file: UploadFile = File(...)):
     """
-    Accepts an image, sends it to Groq Llama 4 Scout vision model,
-    and returns the plant disease diagnosis in Hindi.
+    Accepts an image and returns a default Hindi response.
+    Note: No vision model is currently available on this Groq account.
+    Using qwen/qwen3.8-27b (text-only) for a general advisory response.
     """
+    # Read the file to validate it's a real upload
     contents = await file.read()
-
-    # Guess MIME type from filename
-    mime_type, _ = mimetypes.guess_type(file.filename or "image.jpg")
-    if mime_type is None:
-        mime_type = "image/jpeg"
-
-    # Convert to base64 data URL
-    encoded = base64.b64encode(contents).decode("utf-8")
-    image_data_url = f"data:{mime_type};base64,{encoded}"
+    if len(contents) < 100:
+        raise HTTPException(status_code=400, detail="अमान्य छवि फ़ाइल।")
 
     try:
+        # qwen3.8-27b is text-only; it cannot analyze the actual image.
+        # We ask it to give a general plant disease advisory in Hindi.
         completion = client.chat.completions.create(
-            model="meta-llama/llama-4-scout-17b-16e-instruct",
+            model="qwen/qwen3.8-27b",
             messages=[
                 {
                     "role": "system",
                     "content": (
                         "You are an agricultural plant disease expert. "
-                        "Reply ONLY with the disease name in Hindi, exactly one short sentence, nothing else. "
-                        "No explanation, no symptoms, no extra words."
+                        "Reply ONLY in Hindi using Devanagari script, exactly one short sentence. "
+                        "No explanation, no extra words."
                     )
                 },
                 {
                     "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": "इस फसल की तस्वीर देखकर केवल बीमारी का नाम हिंदी में एक वाक्य में बताओ।"
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": image_data_url
-                            }
-                        }
-                    ]
+                    "content": (
+                        "फसल में रोग की पहचान अभी उपलब्ध नहीं है। "
+                        "कृपया किसान को एक सामान्य सलाह दें कि वे अपनी फसल की सुरक्षा के लिए क्या करें।"
+                    )
                 }
             ],
-            temperature=0,
-            max_completion_tokens=50,
-            top_p=1,
+            temperature=0.6,
+            max_completion_tokens=100,
+            top_p=0.95,
+            reasoning_effort="default",
+            stream=True,
+            stop=None,
         )
-        result_text = completion.choices[0].message.content.strip()
+        result_text = ""
+        for chunk in completion:
+            result_text += chunk.choices[0].delta.content or ""
+        result_text = result_text.strip()
+
         return JSONResponse(
             content={
                 "status": "success",
-                "result": result_text,
+                "result": f"⚠️ छवि विश्लेषण अभी उपलब्ध नहीं है। सुझाव: {result_text}",
             }
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Groq Vision API error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Groq API error: {str(e)}")
 
 
 # ── Voice Chat: STT + LLM pipeline ────────────────────────────────────────────
@@ -186,7 +190,7 @@ async def voice_chat(file: UploadFile = File(...)):
         # Step 2: LLM response via Groq
         logger.info("Sending to LLM...")
         completion = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model="qwen/qwen3.8-27b",
             messages=[
                 {
                     "role": "system",
@@ -199,9 +203,17 @@ async def voice_chat(file: UploadFile = File(...)):
                 },
                 {"role": "user", "content": user_text},
             ],
-            max_tokens=200,
+            temperature=0.6,
+            max_completion_tokens=2048,
+            top_p=0.95,
+            reasoning_effort="default",
+            stream=True,
+            stop=None,
         )
-        response_text = completion.choices[0].message.content.strip()
+        response_text = ""
+        for chunk in completion:
+            response_text += chunk.choices[0].delta.content or ""
+        response_text = response_text.strip()
         logger.info("LLM response: %s", response_text)
 
         return JSONResponse(
