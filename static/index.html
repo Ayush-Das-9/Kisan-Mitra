@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/style.css?v=2026112504">
 </head>
 <body>
     <!-- Language Chooser (shown first) -->
@@ -32,6 +32,9 @@
         </div>
     </div>
 
+    <!-- One-time farm details form (filled by profile.js) -->
+    <div class="profile-screen" id="profile-screen" style="display:none"></div>
+
     <div class="app-container" id="app-container" style="display:none">
         <!-- Header -->
         <header class="app-header" id="app-header">
@@ -47,6 +50,7 @@
                 <div class="logo-text">
                     <h1>Kisan Mitra</h1>
                     <p class="tagline">आपका डिजिटल कृषि सहायक</p>
+                    <p class="greeting" id="greeting" hidden></p>
                 </div>
             </div>
         </header>
@@ -56,6 +60,10 @@
             <button class="voice-greeting-btn" id="voice-greeting-btn" type="button">
                 <span class="voice-btn-icon" id="voice-btn-icon">🔊</span>
                 <span class="voice-btn-label" id="voice-btn-label">मेनू सुनें</span>
+            </button>
+            <button class="edit-profile-btn" id="edit-profile-btn" type="button">
+                <span aria-hidden="true">✏️</span>
+                <span id="edit-profile-label"></span>
             </button>
         </div>
 
@@ -103,6 +111,7 @@
         </footer>
     </div>
 
-    <script src="/static/app.js"></script>
+    <script src="/static/profile.js?v=2026112504"></script>
+    <script src="/static/app.js?v=2026112504"></script>
 </body>
 </html>

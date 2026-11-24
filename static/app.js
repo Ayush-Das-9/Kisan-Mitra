@@ -27,12 +27,36 @@
             liveHint: '✓ = अभी भेजें / जवाब छोड़ें · C = कॉल खत्म करें',
             liveEnded: 'कॉल खत्म हुई। फिर से बात करने के लिए 9 और ✓ दबाएं।',
             liveIdleEnded: 'काफ़ी देर तक कोई आवाज़ नहीं आई, इसलिए कॉल खत्म कर दी गई। फिर से बात करने के लिए 9 और ✓ दबाएं।',
+            profile: {
+                title: 'अपने खेत की जानकारी दें',
+                subtitle: 'बस एक बार भरें — फिर जवाब आपके खेत के हिसाब से मिलेंगे।',
+                fields: { name: 'आपका नाम', state: 'राज्य', district: 'ज़िला', land: 'ज़मीन', main_crop: 'मुख्य फसल', other_crops: 'और कौन सी फसलें', stage: 'फसल अभी किस अवस्था में है', soil: 'मिट्टी का प्रकार', irrigation: 'सिंचाई का साधन', method: 'खेती का तरीका', livestock: 'पशुधन' },
+                namePlaceholder: 'जैसे: रमेश कुमार',
+                districtPlaceholder: 'जैसे: लुधियाना',
+                choose: 'चुनें',
+                save: 'सहेजें और आगे बढ़ें',
+                skip: 'अभी नहीं',
+                cancel: 'रद्द करें',
+                edit: 'खेत की जानकारी बदलें',
+            },
+            greet: (name) => `नमस्ते, ${name} जी`,
+            optionWord: 'विकल्प',
+            stop: '।',
+            // Labels for options 1–7 when farm details are saved ({crop}, {state}, {place})
+            menuPersonal: {
+                '1': '{crop} — फसल की जानकारी',
+                '2': '{state} की किसान खबरें',
+                '3': '{crop} — उर्वरक',
+                '4': 'आज का मंडी भाव',
+                '5': 'मौसम — {place}',
+                '6': '{crop} — रोग और कीट',
+                '7': '{crop} — सिंचाई के सुझाव',
+            },
             errorInvalid: (opt) => `विकल्प "${opt}" उपलब्ध नहीं है। कृपया 1 से 9 के बीच नंबर दर्ज करें।`,
             errorMic: 'माइक्रोफ़ोन की अनुमति नहीं मिली। कृपया अनुमति दें।',
             errorGeneric: (msg) => `त्रुटि: ${msg}। कृपया पुनः प्रयास करें।`,
             footer: 'किसान मित्र © 2026 — किसानों को सशक्त बनाना',
             greetingText: 'किसान मित्र में आपका स्वागत है, आपका किसान सहायक।',
-            greetingMenu: 'विकल्प 1: गेंहू के फसल की जानकारी। विकल्प 2: किसान समाचार। विकल्प 3: कपास उर्वरक। विकल्प 4: मंडी भाव। विकल्प 5: मौसम जानकारी। विकल्प 6: फसल रोग। विकल्प 7: सिंचाई सुझाव। विकल्प 8: फोटो से रोग पहचान। विकल्प 9: AI से बात करें।',
             menu: {
                 '1': { label: 'गेंहू के फसल की जानकारी', icon: '🌾' },
                 '2': { label: 'किसान समाचार', icon: '📰' },
@@ -75,12 +99,36 @@
             liveHint: '✓ = ਹੁਣੇ ਭੇਜੋ / ਜਵਾਬ ਛੱਡੋ · C = ਕਾਲ ਖ਼ਤਮ ਕਰੋ',
             liveEnded: 'ਕਾਲ ਖ਼ਤਮ ਹੋਈ। ਦੁਬਾਰਾ ਗੱਲ ਕਰਨ ਲਈ 9 ਅਤੇ ✓ ਦਬਾਓ।',
             liveIdleEnded: 'ਕਾਫ਼ੀ ਦੇਰ ਕੋਈ ਆਵਾਜ਼ ਨਹੀਂ ਆਈ, ਇਸ ਲਈ ਕਾਲ ਖ਼ਤਮ ਕਰ ਦਿੱਤੀ ਗਈ। ਦੁਬਾਰਾ ਗੱਲ ਕਰਨ ਲਈ 9 ਅਤੇ ✓ ਦਬਾਓ।',
+            profile: {
+                title: 'ਆਪਣੇ ਖੇਤ ਦੀ ਜਾਣਕਾਰੀ ਦਿਓ',
+                subtitle: 'ਬੱਸ ਇੱਕ ਵਾਰ ਭਰੋ — ਫਿਰ ਜਵਾਬ ਤੁਹਾਡੇ ਖੇਤ ਮੁਤਾਬਕ ਮਿਲਣਗੇ।',
+                fields: { name: 'ਤੁਹਾਡਾ ਨਾਮ', state: 'ਸੂਬਾ', district: 'ਜ਼ਿਲ੍ਹਾ', land: 'ਜ਼ਮੀਨ', main_crop: 'ਮੁੱਖ ਫ਼ਸਲ', other_crops: 'ਹੋਰ ਕਿਹੜੀਆਂ ਫ਼ਸਲਾਂ', stage: 'ਫ਼ਸਲ ਹੁਣ ਕਿਸ ਹਾਲਤ ਵਿੱਚ ਹੈ', soil: 'ਮਿੱਟੀ ਦੀ ਕਿਸਮ', irrigation: 'ਸਿੰਚਾਈ ਦਾ ਸਾਧਨ', method: 'ਖੇਤੀ ਦਾ ਤਰੀਕਾ', livestock: 'ਪਸ਼ੂ ਧਨ' },
+                namePlaceholder: 'ਜਿਵੇਂ: ਗੁਰਪ੍ਰੀਤ ਸਿੰਘ',
+                districtPlaceholder: 'ਜਿਵੇਂ: ਲੁਧਿਆਣਾ',
+                choose: 'ਚੁਣੋ',
+                save: 'ਸੰਭਾਲੋ ਅਤੇ ਅੱਗੇ ਵਧੋ',
+                skip: 'ਹੁਣ ਨਹੀਂ',
+                cancel: 'ਰੱਦ ਕਰੋ',
+                edit: 'ਖੇਤ ਦੀ ਜਾਣਕਾਰੀ ਬਦਲੋ',
+            },
+            greet: (name) => `ਸਤ ਸ੍ਰੀ ਅਕਾਲ, ${name} ਜੀ`,
+            optionWord: 'ਵਿਕਲਪ',
+            stop: '।',
+            // Labels for options 1–7 when farm details are saved ({crop}, {state}, {place})
+            menuPersonal: {
+                '1': '{crop} — ਫ਼ਸਲ ਦੀ ਜਾਣਕਾਰੀ',
+                '2': '{state} ਦੀਆਂ ਕਿਸਾਨ ਖ਼ਬਰਾਂ',
+                '3': '{crop} — ਖਾਦ',
+                '4': 'ਅੱਜ ਦਾ ਮੰਡੀ ਭਾਅ',
+                '5': 'ਮੌਸਮ — {place}',
+                '6': '{crop} — ਰੋਗ ਅਤੇ ਕੀੜੇ',
+                '7': '{crop} — ਸਿੰਚਾਈ ਦੇ ਸੁਝਾਅ',
+            },
             errorInvalid: (opt) => `ਵਿਕਲਪ "${opt}" ਉਪਲਬਧ ਨਹੀਂ। ਕਿਰਪਾ ਕਰਕੇ 1 ਤੋਂ 9 ਵਿੱਚੋਂ ਨੰਬਰ ਦਰਜ ਕਰੋ।`,
             errorMic: 'ਮਾਈਕ੍ਰੋਫ਼ੋਨ ਦੀ ਇਜਾਜ਼ਤ ਨਹੀਂ ਮਿਲੀ। ਕਿਰਪਾ ਕਰਕੇ ਇਜਾਜ਼ਤ ਦਿਓ।',
             errorGeneric: (msg) => `ਗਲਤੀ: ${msg}। ਕਿਰਪਾ ਕਰਕੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।`,
             footer: 'ਕਿਸਾਨ ਮਿੱਤਰ © 2026 — ਕਿਸਾਨਾਂ ਨੂੰ ਸਸ਼ਕਤ ਬਣਾਉਣਾ',
             greetingText: 'ਕਿਸਾਨ ਮਿੱਤਰ ਵਿੱਚ ਤੁਹਾਡਾ ਸੁਆਗਤ ਹੈ, ਤੁਹਾਡਾ ਕਿਸਾਨ ਸਹਾਇਕ।',
-            greetingMenu: 'ਵਿਕਲਪ 1: ਕਣਕ ਦੀ ਫ਼ਸਲ। ਵਿਕਲਪ 2: ਕਿਸਾਨ ਖ਼ਬਰਾਂ। ਵਿਕਲਪ 3: ਕਪਾਹ ਖਾਦ। ਵਿਕਲਪ 4: ਮੰਡੀ ਭਾਅ। ਵਿਕਲਪ 5: ਮੌਸਮ। ਵਿਕਲਪ 6: ਫ਼ਸਲ ਰੋਗ। ਵਿਕਲਪ 7: ਸਿੰਚਾਈ। ਵਿਕਲਪ 8: ਫ਼ੋਟੋ ਤੋਂ ਰੋਗ। ਵਿਕਲਪ 9: AI ਨਾਲ ਗੱਲ ਕਰੋ।',
             menu: {
                 '1': { label: 'ਕਣਕ ਦੀ ਫ਼ਸਲ ਦੀ ਜਾਣਕਾਰੀ', icon: '🌾' },
                 '2': { label: 'ਕਿਸਾਨ ਖ਼ਬਰਾਂ', icon: '📰' },
@@ -123,12 +171,36 @@
             liveHint: '✓ = send now / skip answer · C = end call',
             liveEnded: 'Call ended. Press 9 and ✓ to talk again.',
             liveIdleEnded: 'No one spoke for a while, so the call ended. Press 9 and ✓ to talk again.',
+            profile: {
+                title: 'Tell us about your farm',
+                subtitle: 'Fill this in once — answers will then fit your farm.',
+                fields: { name: 'Your name', state: 'State', district: 'District', land: 'Land', main_crop: 'Main crop', other_crops: 'Other crops', stage: 'Current crop stage', soil: 'Soil type', irrigation: 'Irrigation', method: 'Farming method', livestock: 'Livestock' },
+                namePlaceholder: 'e.g. Gurpreet Singh',
+                districtPlaceholder: 'e.g. Ludhiana',
+                choose: 'Choose',
+                save: 'Save & continue',
+                skip: 'Not now',
+                cancel: 'Cancel',
+                edit: 'Edit farm details',
+            },
+            greet: (name) => `Hello, ${name}`,
+            optionWord: 'Option',
+            stop: '.',
+            // Labels for options 1–7 when farm details are saved ({crop}, {state}, {place})
+            menuPersonal: {
+                '1': '{crop} crop information',
+                '2': 'Farming news for {state}',
+                '3': 'Fertilizer for {crop}',
+                '4': "Today's mandi prices",
+                '5': 'Weather for {place}',
+                '6': '{crop} diseases and pests',
+                '7': 'Irrigation tips for {crop}',
+            },
             errorInvalid: (opt) => `Option "${opt}" is not available. Please enter a number between 1 and 9.`,
             errorMic: 'Microphone permission denied. Please allow access.',
             errorGeneric: (msg) => `Error: ${msg}. Please try again.`,
             footer: 'Kisan Mitra © 2026 — Empowering Farmers',
             greetingText: 'Welcome to Kisan Mitra, your farming assistant.',
-            greetingMenu: 'Option 1: Wheat crop info. Option 2: Farmer news. Option 3: Cotton fertilizers. Option 4: Market prices. Option 5: Weather. Option 6: Crop disease. Option 7: Irrigation tips. Option 8: Photo disease detection. Option 9: Talk to AI.',
             menu: {
                 '1': { label: 'Wheat Crop Information', icon: '🌾' },
                 '2': { label: 'Farmer News', icon: '📰' },
@@ -169,20 +241,60 @@
             unlockAudio();
             document.getElementById('html-root').lang = lang;
             langChooser.style.display = 'none';
-            appContainer.style.display = '';
-            applyTranslations();
-            tickerItems = t.ticker.slice();
-            tickerIndex = 0;
-            tickerElement.innerText = tickerItems[0];
-            updateDisplay();
+            // First visit: ask for farm details once, then open the app
+            if (KisanProfile.load() === null) {
+                openProfileForm();
+            } else {
+                showApp();
+            }
         });
     });
+
+    function showApp() {
+        appContainer.style.display = '';
+        applyTranslations();
+        applyPersonalization();
+        updateDisplay();
+        // Crop/state names come from the server's choice lists; relabel once loaded
+        if (!KisanProfile.optionsLoaded()) {
+            KisanProfile.loadOptions().then(applyPersonalization).catch(err =>
+                console.warn('Menu stays generic; could not load choice lists:', err));
+        }
+    }
+
+    // Farm details form (first visit, or the Edit button)
+    function openProfileForm() {
+        appContainer.style.display = 'none';
+        KisanProfile.showForm({
+            lang: lang,
+            texts: t.profile,
+            existing: KisanProfile.load(),
+            onDone: showApp,
+        });
+    }
+
+    document.getElementById('edit-profile-btn').addEventListener('click', function () {
+        if (live.active) endLiveCall();
+        stopSpeaking();
+        openProfileForm();
+    });
+
+    // Farmer's name from the saved details, or '' if none
+    function farmerName() {
+        const profile = KisanProfile.load();
+        return (profile && !profile.skipped && profile.name) || '';
+    }
 
     function applyTranslations() {
         document.querySelector('.tagline').textContent = t.tagline;
         document.getElementById('voice-btn-label').textContent = t.voiceBtnLabel;
+        document.getElementById('edit-profile-label').textContent = t.profile.edit;
         document.querySelector('.display-label').textContent = t.displayLabel;
         document.querySelector('.app-footer p').textContent = t.footer;
+        const greeting = document.getElementById('greeting');
+        const name = farmerName();
+        greeting.textContent = name ? t.greet(name) : '';
+        greeting.hidden = !name;
     }
 
     // ===== DOM REFERENCES =====
@@ -199,13 +311,50 @@
     let isLoading = false;
     const MAX_DIGITS = 4;
 
-    // Voice chat state
-    let isRecording = false;
-    let mediaRecorder = null;
-    let audioChunks = [];
+    // ===== PERSONALIZED MENU =====
+    // Options 1–7 follow the farmer's saved details (crop, state, district);
+    // 8 and 9 never change. Without details the generic labels are used.
+    let currentMenu = null;
 
-    // menuMeta is derived from active translation
-    function getMenuMeta() { return t.menu; }
+    function getMenuMeta() { return currentMenu || t.menu; }
+
+    function savedProfile() {
+        const profile = KisanProfile.load();
+        return profile && !profile.skipped ? profile : {};
+    }
+
+    // Details to send with requests (never includes the name)
+    function profileForServer() {
+        return KisanProfile.forServer(KisanProfile.load());
+    }
+
+    function personalLabel(option, profile) {
+        const template = t.menuPersonal[option];
+        if (!template || !profile.main_crop || !KisanProfile.optionsLoaded()) return null;
+        const crop = KisanProfile.choiceLabel('main_crop', profile.main_crop, lang);
+        const state = profile.state ? KisanProfile.choiceLabel('state', profile.state, lang) : '';
+        const place = profile.district || state;
+        if ((template.includes('{state}') && !state) || (template.includes('{place}') && !place)) return null;
+        return template.replace('{crop}', crop).replace('{state}', state).replace('{place}', place);
+    }
+
+    // Recompute menu labels and the ticker for the current language + details
+    function applyPersonalization() {
+        const profile = savedProfile();
+        currentMenu = {};
+        Object.keys(t.menu).forEach(key => {
+            currentMenu[key] = { icon: t.menu[key].icon, label: personalLabel(key, profile) || t.menu[key].label };
+        });
+        tickerItems = Object.keys(currentMenu).map(key => key + '. ' + currentMenu[key].label);
+        tickerIndex = 0;
+        tickerElement.innerText = tickerItems[0];
+    }
+
+    // "Option 1: …. Option 2: …." for the spoken menu
+    function spokenMenu() {
+        const menu = getMenuMeta();
+        return Object.keys(menu).map(key => `${t.optionWord} ${key}: ${menu[key].label}${t.stop}`).join(' ');
+    }
 
     // ===== TICKER =====
     let tickerItems = t.ticker.slice();
@@ -322,14 +471,6 @@
             return;
         }
 
-        // Option 1: single push-to-talk question (press ✓ to stop recording)
-        if (option === '1') {
-            currentInput = '';
-            updateDisplay();
-            startVoiceRecording();
-            return;
-        }
-
         isLoading = true;
         setNumpadDisabled(true);
         showLoading(option);
@@ -337,7 +478,11 @@
         updateDisplay();
 
         try {
-            const res = await fetch(`/api/menu/${option}?lang=${encodeURIComponent(lang)}`);
+            const res = await fetch(`/api/menu/${option}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lang: lang, profile: profileForServer() }),
+            });
             if (!res.ok) {
                 const err = await res.json();
                 throw new Error(err.detail || 'Server error');
@@ -398,6 +543,7 @@
                 const formData = new FormData();
                 formData.append('file', photo, photo === file ? file.name : 'photo.jpg');
                 formData.append('lang', lang);
+                formData.append('profile', JSON.stringify(profileForServer()));
 
                 const res = await fetch('/api/upload-image', {
                     method: 'POST',
@@ -426,100 +572,6 @@
             btn.disabled = disabled;
             btn.style.opacity = disabled ? '0.5' : '1';
         });
-    }
-
-    // ===== VOICE CHAT (Push-to-Talk on Button 9) =====
-
-    async function startVoiceRecording() {
-        if (isRecording) return;
-
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            audioChunks = [];
-            mediaRecorder = new MediaRecorder(stream);
-
-            mediaRecorder.ondataavailable = (e) => {
-                if (e.data.size > 0) audioChunks.push(e.data);
-            };
-
-            mediaRecorder.onstop = async () => {
-                // Stop all mic tracks
-                stream.getTracks().forEach(t => t.stop());
-
-                const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
-                audioChunks = [];
-                await sendVoiceChat(audioBlob);
-            };
-
-            mediaRecorder.start();
-            isRecording = true;
-
-            // Show recording UI
-            responseIcon.textContent = '🎙️';
-            responseText.innerHTML = t.voiceListening;
-            responseArea.classList.remove('hidden');
-            document.getElementById('display-area').classList.add('recording');
-            const btnSubmit = document.getElementById('btn-submit');
-            if (btnSubmit) btnSubmit.classList.add('recording-btn');
-
-        } catch (err) {
-            console.error('Mic access error:', err);
-            showError(t.errorMic);
-        }
-    }
-
-    function stopVoiceRecording() {
-        if (!isRecording || !mediaRecorder) return;
-        isRecording = false;
-        mediaRecorder.stop();
-
-        // Remove recording UI
-        document.getElementById('display-area').classList.remove('recording');
-        const btnSubmit = document.getElementById('btn-submit');
-        if (btnSubmit) btnSubmit.classList.remove('recording-btn');
-    }
-
-    async function sendVoiceChat(audioBlob) {
-        isLoading = true;
-        setNumpadDisabled(true);
-
-        responseIcon.textContent = '⏳';
-        responseText.innerHTML = t.voiceProcessing;
-
-        try {
-            const formData = new FormData();
-            formData.append('file', audioBlob, 'recording.webm');
-            formData.append('lang', lang);
-
-            const res = await fetch('/api/voice-chat', {
-                method: 'POST',
-                body: formData,
-            });
-
-            if (!res.ok) {
-                const err = await res.json();
-                throw new Error(err.detail || 'Server error');
-            }
-
-            const data = await res.json();
-
-            // Show transcription + response
-            responseIcon.textContent = '🎙️';
-            responseText.innerHTML =
-                '<div style="margin-bottom:8px;color:rgba(134,239,172,0.6);font-size:0.85rem;">' + t.voiceYouSaid +
-                data.transcription + '</div>' +
-                '<div>' + data.response + '</div>';
-            responseArea.classList.remove('hidden');
-
-            // Speak the response in the selected language
-            speak(data.response);
-
-        } catch (err) {
-            showError(t.errorGeneric(err.message));
-        } finally {
-            isLoading = false;
-            setNumpadDisabled(false);
-        }
     }
 
     // ===== LIVE CALL (Option 9: hands-free conversation) =====
@@ -688,6 +740,7 @@
         formData.append('file', blob, audioFileName(blob.type));
         formData.append('lang', lang);
         formData.append('history', JSON.stringify(live.history.slice(-LIVE.HISTORY_MESSAGES)));
+        formData.append('profile', JSON.stringify(profileForServer()));
 
         let data;
         try {
@@ -801,12 +854,6 @@
         if (live.active) {
             if (value === 'C') endLiveCall();
             else if (value === 'OK') liveSendOrSkip();
-            return;
-        }
-
-        // If recording, pressing OK stops it
-        if (isRecording && value === 'OK') {
-            stopVoiceRecording();
             return;
         }
 
@@ -1006,12 +1053,12 @@
         cancelAllSpeech();
         setSpeakingState(true);
 
-        const greetingText = t.greetingText;
-        const menuText = t.greetingMenu;
-
         whenVoicesReady(() => {
-            speak(greetingText);
-            speak(menuText, () => setSpeakingState(false));
+            // The name never leaves the phone: say it only when the browser's own
+            // voice speaks; server-made audio (/api/tts) gets the greeting without it.
+            const name = getVoiceForLang() ? farmerName() : '';
+            speak((name ? t.greet(name) + t.stop + ' ' : '') + t.greetingText);
+            speak(spokenMenu(), () => setSpeakingState(false));
         });
     }
 

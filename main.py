@@ -9,9 +9,15 @@ from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
-from groq import Groq
+from groq import Groq, AuthenticationError, RateLimitError
 from gtts import gTTS
 import os
+
+from farmer_profile import CHOICES, clean_profile
+from live_data import (describe_prices, describe_weather, fetch_mandi_prices,
+                       fetch_weather, missing_price_crops)
+from prompts import (DEFAULT_LANG, assistant_background, build_menu_messages,
+                     get_language, language_rule)
 
 # ── Logging setup ──────────────────────────────────────────────────────────────
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -25,7 +31,27 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 if not GROQ_API_KEY:
     raise RuntimeError("GROQ_API_KEY not set in .env file")
 
-client = Groq(api_key=GROQ_API_KEY)
+# Optional second key, used only when the main key is rate-limited (429) or
+# rejected (401). Groq applies rate limits per *organization*, so a backup key
+# only adds capacity if it was created in a different Groq organization.
+GROQ_API_KEY_BACKUP = os.getenv("GROQ_API_KEY_BACKUP")
+
+groq_clients = [Groq(api_key=GROQ_API_KEY)]
+if GROQ_API_KEY_BACKUP and GROQ_API_KEY_BACKUP != GROQ_API_KEY:
+    groq_clients.append(Groq(api_key=GROQ_API_KEY_BACKUP))
+
+
+def groq_call(make_request):
+    """Run make_request(client) with the main Groq key; if that key is
+    rate-limited or rejected, retry the same request with the backup key."""
+    for i, groq_client in enumerate(groq_clients):
+        try:
+            return make_request(groq_client)
+        except (RateLimitError, AuthenticationError) as e:
+            if i == len(groq_clients) - 1:
+                raise
+            logger.warning("Groq key #%d failed (%s); retrying with backup key",
+                           i + 1, type(e).__name__)
 
 app = FastAPI(title="Kisan Mitra", description="Farmer's Digital Assistant")
 
@@ -54,62 +80,85 @@ async def startup_event():
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
-# ── Supported UI languages ────────────────────────────────────────────────────
-# "prompt": how the LLM is told which language/script to answer in.
-# "whisper": ISO-639-1 code for Groq Whisper STT.  "tts": gTTS language code.
-LANGUAGES = {
-    "hi": {"prompt": "Hindi (Devanagari script)", "whisper": "hi", "tts": "hi"},
-    "pa": {"prompt": "Punjabi (Gurmukhi script)", "whisper": "pa", "tts": "pa"},
-    "en": {"prompt": "English", "whisper": "en", "tts": "en"},
-}
-DEFAULT_LANG = "hi"
 
-
-def get_language(lang: str) -> dict:
-    return LANGUAGES.get(lang, LANGUAGES[DEFAULT_LANG])
-
-
-def language_rule(lang: str) -> str:
-    return f"Always respond only in {get_language(lang)['prompt']}."
-
-
-# ── Prompts for each menu option ({language} is filled per request) ───────────
-PROMPTS = {
-    "1": "Give basic information about the wheat crop in exactly 20 words in {language}. Use farmer-friendly language.",
-    "2": "Write one recent sensational news headline related to farmers, as printed in any newspaper, in {language}, 20 to 30 words long. Write only the headline, nothing else.",
-    "3": "Describe the fertilizers used in cotton farming in exactly 20 words in {language}. Be brief and practical.",
-    "4": "Give today's estimated prices of wheat, paddy and mustard in the major grain mandis in exactly 20 words in {language}.",
-    "5": "Give a short weather forecast for today for farmers in North India in exactly 20 words in {language}.",
-    "6": "Name 2 major diseases of wheat and paddy crops with one symptom each, in exactly 20 words in {language}.",
-    "7": "Give 2 practical irrigation tips for Kharif crops in exactly 20 words in {language}.",
-    "9": "Name 2 major government schemes for farmers with one benefit each, in exactly 20 words in {language}.",
-    "10": "Explain the Pradhan Mantri Fasal Bima Yojana in exactly 20 words in {language}, in simple and clear language.",
-}
+def profile_from_form(raw: str) -> dict:
+    """Farm details sent as a JSON form field (photo / voice requests); bad JSON -> {}."""
+    try:
+        return clean_profile(json.loads(raw)) if raw else {}
+    except ValueError:
+        return {}
 
 
 @app.get("/")
 async def root():
-    return FileResponse(os.path.join(STATIC_DIR, "index.html"))
+    # Always revalidate the page so a cached old page is never paired with a
+    # newer app.js after a deploy (asset URLs in index.html carry a ?v= tag).
+    return FileResponse(os.path.join(STATIC_DIR, "index.html"),
+                        headers={"Cache-Control": "no-cache"})
+
+
+@app.get("/api/profile-options")
+async def profile_options():
+    """Choice lists (with hi/pa/en labels) for the one-time farm details form."""
+    return {"fields": CHOICES}
+
+
+async def live_data_for(option: str, profile: dict):
+    """Real prices (option 4) or weather (option 5) as prompt text, or None.
+    Never raises: any surprise from the data services means an AI-only answer."""
+    try:
+        return await _live_data_for(option, profile)
+    except Exception as e:
+        logger.warning("Live data for option %s failed: %r", option, e)
+        return None
+
+
+async def _live_data_for(option: str, profile: dict):
+    if not profile.get("main_crop"):
+        return None
+    if option == "4" and profile.get("state"):
+        crops = [profile["main_crop"]] + profile.get("other_crops", [])
+        records = await fetch_mandi_prices(profile["state"], crops)
+        return describe_prices(records, missing_price_crops(crops, records)) or None
+    if option == "5" and (profile.get("district") or profile.get("state")):
+        weather = await fetch_weather(profile.get("district", ""), profile.get("state", ""))
+        return describe_weather(weather) if weather else None
+    return None
+
+
+class MenuRequest(BaseModel):
+    lang: str = DEFAULT_LANG
+    profile: dict | None = None
+
+
+@app.post("/api/menu/{option}")
+async def get_menu_response(option: str, req: MenuRequest):
+    """
+    Calls Groq API for the given menu option and returns the AI-generated
+    text response in the requested UI language (hi / pa / en), personalized
+    with the farmer's details when the browser sends them.
+    """
+    return await menu_answer(option, req.lang, clean_profile(req.profile))
 
 
 @app.get("/api/menu/{option}")
-async def get_menu_response(option: str, lang: str = DEFAULT_LANG):
-    """
-    Calls Groq API for the given menu option and returns the AI-generated
-    text response in the requested UI language (hi / pa / en).
-    """
-    prompt = PROMPTS.get(option)
-    if not prompt:
+async def get_menu_response_legacy(option: str, lang: str = DEFAULT_LANG):
+    """Old GET form, kept for browsers still running the previous app.js
+    (generic answers, no farm details). Safe to remove in a later release."""
+    return await menu_answer(option, lang, {})
+
+
+async def menu_answer(option: str, lang: str, profile: dict):
+    live_text = await live_data_for(option, profile)
+    try:
+        messages = build_menu_messages(option, lang, profile, live_text)
+    except KeyError:
         raise HTTPException(status_code=404, detail=f"Option '{option}' not found.")
-    prompt = prompt.format(language=get_language(lang)["prompt"])
 
     try:
-        completion = client.chat.completions.create(
+        completion = groq_call(lambda c: c.chat.completions.create(
             model="qwen/qwen3.8-27b",
-            messages=[
-                {"role": "system", "content": f"You are a helpful agricultural assistant. {language_rule(lang)}"},
-                {"role": "user", "content": prompt}
-            ],
+            messages=messages,
             temperature=0.6,
             # Groq's on-demand tier refuses any request whose max output exceeds
             # the account's 1000 output-tokens-per-minute limit; ~20-30 words needs ~150.
@@ -118,7 +167,7 @@ async def get_menu_response(option: str, lang: str = DEFAULT_LANG):
             reasoning_effort="default",
             stream=True,
             stop=None,
-        )
+        ))
         text = ""
         for chunk in completion:
             text += chunk.choices[0].delta.content or ""
@@ -134,7 +183,11 @@ MAX_IMAGE_BYTES = 3_500_000
 
 
 @app.post("/api/upload-image")
-async def upload_image(file: UploadFile = File(...), lang: str = Form(DEFAULT_LANG)):
+async def upload_image(
+    file: UploadFile = File(...),
+    lang: str = Form(DEFAULT_LANG),
+    profile: str = Form(""),
+):
     """
     Accepts a crop photo and asks the vision-capable Qwen model to identify the
     disease or pest and suggest treatment, in the requested language.
@@ -151,7 +204,7 @@ async def upload_image(file: UploadFile = File(...), lang: str = Form(DEFAULT_LA
     image_url = f"data:{mime};base64,{base64.b64encode(contents).decode('ascii')}"
 
     try:
-        completion = client.chat.completions.create(
+        completion = groq_call(lambda c: c.chat.completions.create(
             model="qwen/qwen3.8-27b",
             messages=[
                 {
@@ -160,6 +213,7 @@ async def upload_image(file: UploadFile = File(...), lang: str = Form(DEFAULT_LA
                         "You are an expert plant pathologist helping Indian farmers. "
                         f"{language_rule(lang)} "
                         "Plain text only, no markdown or bullet points."
+                        f"{assistant_background(profile_from_form(profile))}"
                     ),
                 },
                 {
@@ -187,7 +241,7 @@ async def upload_image(file: UploadFile = File(...), lang: str = Form(DEFAULT_LA
             reasoning_effort="default",
             stream=True,
             stop=None,
-        )
+        ))
         result_text = ""
         for chunk in completion:
             result_text += chunk.choices[0].delta.content or ""
@@ -223,6 +277,7 @@ async def voice_chat(
     file: UploadFile = File(...),
     lang: str = Form(DEFAULT_LANG),
     history: str = Form(""),
+    profile: str = Form(""),
 ):
     """
     Accepts audio from the browser mic, transcribes it via Groq Whisper,
@@ -241,11 +296,11 @@ async def voice_chat(
     try:
         # Step 1: Speech-to-Text via Groq Whisper
         logger.info("Starting STT transcription...")
-        transcription = client.audio.transcriptions.create(
+        transcription = groq_call(lambda c: c.audio.transcriptions.create(
             file=(file.filename or "recording.webm", contents),
             model="whisper-large-v3-turbo",
             language=get_language(lang)["whisper"],
-        )
+        ))
         user_text = transcription.text.strip()
         logger.info("STT result: %s", user_text)
 
@@ -254,7 +309,7 @@ async def voice_chat(
 
         # Step 2: LLM response via Groq
         logger.info("Sending to LLM...")
-        completion = client.chat.completions.create(
+        completion = groq_call(lambda c: c.chat.completions.create(
             model="qwen/qwen3.8-27b",
             messages=[
                 {
@@ -266,6 +321,7 @@ async def voice_chat(
                         "Keep responses concise (2-3 sentences max). "
                         "Be friendly and practical. Plain text only, no markdown, "
                         "because your reply is read aloud."
+                        f"{assistant_background(profile_from_form(profile))}"
                     ),
                 },
                 *parse_history(history),
@@ -279,7 +335,7 @@ async def voice_chat(
             reasoning_effort="default",
             stream=True,
             stop=None,
-        )
+        ))
         response_text = ""
         for chunk in completion:
             response_text += chunk.choices[0].delta.content or ""

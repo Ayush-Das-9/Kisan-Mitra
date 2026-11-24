@@ -667,3 +667,146 @@ body::before {
     font-size: 0.75rem;
     opacity: 0.6;
 }
+
+/* ===== FARM DETAILS FORM (one-time profile) ===== */
+.profile-screen {
+    position: fixed;
+    inset: 0;
+    background: var(--bg-primary);
+    overflow-y: auto;
+    z-index: 1000;
+    padding: var(--pad-lg) var(--pad-md);
+}
+
+.profile-card {
+    max-width: 480px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--pad-md);
+}
+
+.profile-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--green-400);
+}
+
+.profile-subtitle {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-top: -8px;
+}
+
+.profile-field label,
+.profile-checks legend {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--green-300);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.profile-field select,
+.profile-field input[type="text"] {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid rgba(74, 222, 128, 0.25);
+    border-radius: 10px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+.profile-field select:focus,
+.profile-field input[type="text"]:focus {
+    outline: 2px solid var(--green-500);
+    outline-offset: 1px;
+}
+
+.profile-checks {
+    border: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.profile-checks legend {
+    width: 100%;
+}
+
+.profile-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 12px;
+    border: 1px solid rgba(74, 222, 128, 0.2);
+    border-radius: 10px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    cursor: pointer;
+}
+
+.profile-check input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--green-500);
+}
+
+.profile-buttons {
+    display: flex;
+    gap: 12px;
+    margin: var(--pad-sm) 0 var(--pad-xl);
+}
+
+.profile-save,
+.profile-skip {
+    flex: 1;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.profile-save {
+    border: none;
+    background: var(--green-600);
+    color: var(--text-primary);
+}
+
+.profile-skip {
+    border: 2px solid var(--green-700);
+    background: transparent;
+    color: var(--green-300);
+}
+
+/* Greeting under the tagline, and the edit button next to "Hear menu" */
+.greeting {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--green-300);
+    margin-top: 4px;
+}
+
+.voice-greeting-wrapper {
+    gap: var(--pad-sm);
+    flex-wrap: wrap;
+}
+
+.edit-profile-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    border: 1px solid rgba(74, 222, 128, 0.25);
+    border-radius: var(--radius-xl);
+    background: transparent;
+    color: var(--green-300);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+}
