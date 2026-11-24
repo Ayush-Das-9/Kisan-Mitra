@@ -111,7 +111,9 @@ async def get_menu_response(option: str, lang: str = DEFAULT_LANG):
                 {"role": "user", "content": prompt}
             ],
             temperature=0.6,
-            max_completion_tokens=2048,
+            # Groq's on-demand tier refuses any request whose max output exceeds
+            # the account's 1000 output-tokens-per-minute limit; ~20-30 words needs ~150.
+            max_completion_tokens=400,
             top_p=0.95,
             reasoning_effort="default",
             stream=True,
