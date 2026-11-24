@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="hi" id="html-root">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -11,7 +11,28 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <div class="app-container">
+    <!-- Language Chooser (shown first) -->
+    <div class="lang-chooser" id="lang-chooser">
+        <div class="lang-chooser-inner">
+            <div class="lang-logo">
+                <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" width="52" height="52">
+                    <path d="M24 4C24 4 18 12 18 20C18 24 20 28 24 30C28 28 30 24 30 20C30 12 24 4 24 4Z" fill="#4ade80"/>
+                    <path d="M24 30V44" stroke="#22c55e" stroke-width="3" stroke-linecap="round"/>
+                    <path d="M16 36C16 36 20 32 24 34" stroke="#22c55e" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M32 34C32 34 28 30 24 32" stroke="#4ade80" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span class="lang-title">Kisan Mitra</span>
+            </div>
+            <p class="lang-prompt">भाषा चुनें / Choose Language / ਭਾਸ਼ਾ ਚੁਣੋ</p>
+            <div class="lang-buttons">
+                <button class="lang-btn" data-lang="hi">हिंदी</button>
+                <button class="lang-btn" data-lang="pa">ਪੰਜਾਬੀ</button>
+                <button class="lang-btn" data-lang="en">English</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="app-container" id="app-container" style="display:none">
         <!-- Header -->
         <header class="app-header" id="app-header">
             <div class="logo-section">

@@ -1,12 +1,15 @@
 import base64
+import io
 import mimetypes
 import logging
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from dotenv import load_dotenv
 from groq import Groq
+from gtts import gTTS
 import os
 
 # ── Logging setup ──────────────────────────────────────────────────────────────
@@ -50,17 +53,42 @@ async def startup_event():
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
-# ── Prompts for each menu option ──────────────────────────────────────────────
+# ── Supported UI languages ────────────────────────────────────────────────────
+# "prompt": how the LLM is told which language/script to answer in.
+# "whisper": ISO-639-1 code for Groq Whisper STT.  "tts": gTTS language code.
+LANGUAGES = {
+    "hi": {"prompt": "Hindi (Devanagari script)", "whisper": "hi", "tts": "hi"},
+    "pa": {"prompt": "Punjabi (Gurmukhi script)", "whisper": "pa", "tts": "pa"},
+    "en": {"prompt": "English", "whisper": "en", "tts": "en"},
+}
+DEFAULT_LANG = "hi"
+
+
+def get_language(lang: str) -> dict:
+    return LANGUAGES.get(lang, LANGUAGES[DEFAULT_LANG])
+
+
+def language_rule(lang: str) -> str:
+    return f"Always respond only in {get_language(lang)['prompt']}."
+
+
+# ── Prompts for each menu option ({language} is filled per request) ───────────
 PROMPTS = {
-    "1": "गेहूं की फसल के बारे में बुनियादी जानकारी ठीक 20 शब्दों में हिंदी में दें। किसान के अनुकूल भाषा में लिखें।",
-    "2": "किसानों से संबंधित एक हालिया सनसनीखेज समाचार शीर्षक हिंदी में लिखें, जो 20 से 30 शब्दों का हो। केवल शीर्षक लिखें किसी भी न्यूज़ पेपर की, और कुछ नहीं।",
-    "3": "कपा स की खेती में उपयोग होने वाले उर्वरक के बारे में ठीक 20 शब्दों में हिंदी में बताएं। संक्षिप्त और व्यावहारिक रहें।",
-    "4": "आज के प्रमुख अनाज मंडियों में गेहूं, धान और सरसों के अनुमानित भाव ठीक 20 शब्दों में हिंदी में बताएं।",
-    "5": "उत्तर भारत के किसानों के लिए आज के मौसम का संक्षिप्त अनुमान ठीक 20 शब्दों में हिंदी में दें।",
-    "6": "गेहूं और धान की फसल में लगने वाले 2 प्रमुख रोगों के नाम और एक-एक लक्षण ठीक 20 शब्दों में हिंदी में बताएं।",
-    "7": "खरीफ फसलों के लिए सही सिंचाई के 2 व्यावहारिक सुझाव ठीक 20 शब्दों में हिंदी में दें।",
-    "9": "किसानों के लिए 2 प्रमुख सरकारी योजनाओं के नाम और एक-एक लाभ ठीक 20 शब्दों में हिंदी में बताएं।",
-    "10": "प्रधानमंत्री फसल बीमा योजना के बारे में ठीक 20 शब्दों में हिंदी में बताएं। सरल और स्पष्ट भाषा में।",
+    "1": "Give basic information about the wheat crop in exactly 20 words in {language}. Use farmer-friendly language.",
+    "2": "Write one recent sensational news headline related to farmers, as printed in any newspaper, in {language}, 20 to 30 words long. Write only the headline, nothing else.",
+    "3": "Describe the fertilizers used in cotton farming in exactly 20 words in {language}. Be brief and practical.",
+    "4": "Give today's estimated prices of wheat, paddy and mustard in the major grain mandis in exactly 20 words in {language}.",
+    "5": "Give a short weather forecast for today for farmers in North India in exactly 20 words in {language}.",
+    "6": "Name 2 major diseases of wheat and paddy crops with one symptom each, in exactly 20 words in {language}.",
+    "7": "Give 2 practical irrigation tips for Kharif crops in exactly 20 words in {language}.",
+    "9": "Name 2 major government schemes for farmers with one benefit each, in exactly 20 words in {language}.",
+    "10": "Explain the Pradhan Mantri Fasal Bima Yojana in exactly 20 words in {language}, in simple and clear language.",
+}
+
+IMAGE_UNAVAILABLE_PREFIX = {
+    "hi": "⚠️ छवि विश्लेषण अभी उपलब्ध नहीं है। सुझाव:",
+    "pa": "⚠️ ਤਸਵੀਰ ਵਿਸ਼ਲੇਸ਼ਣ ਹਾਲੇ ਉਪਲਬਧ ਨਹੀਂ ਹੈ। ਸੁਝਾਅ:",
+    "en": "⚠️ Image analysis is not available yet. Tip:",
 }
 
 
@@ -70,20 +98,21 @@ async def root():
 
 
 @app.get("/api/menu/{option}")
-async def get_menu_response(option: str):
+async def get_menu_response(option: str, lang: str = DEFAULT_LANG):
     """
-    Calls Groq API for the given menu option (1, 2, or 3)
-    and returns the AI-generated text response.
+    Calls Groq API for the given menu option and returns the AI-generated
+    text response in the requested UI language (hi / pa / en).
     """
     prompt = PROMPTS.get(option)
     if not prompt:
         raise HTTPException(status_code=404, detail=f"Option '{option}' not found.")
+    prompt = prompt.format(language=get_language(lang)["prompt"])
 
     try:
         completion = client.chat.completions.create(
             model="qwen/qwen3.8-27b",
             messages=[
-                {"role": "system", "content": "You are a helpful agricultural assistant. Always respond in Hindi using Devanagari script."},
+                {"role": "system", "content": f"You are a helpful agricultural assistant. {language_rule(lang)}"},
                 {"role": "user", "content": prompt}
             ],
             temperature=0.6,
@@ -103,9 +132,9 @@ async def get_menu_response(option: str):
 
 
 @app.post("/api/upload-image")
-async def upload_image(file: UploadFile = File(...)):
+async def upload_image(file: UploadFile = File(...), lang: str = Form(DEFAULT_LANG)):
     """
-    Accepts an image and returns a default Hindi response.
+    Accepts an image and returns a default advisory in the requested language.
     Note: No vision model is currently available on this Groq account.
     Using qwen/qwen3.8-27b (text-only) for a general advisory response.
     """
@@ -124,15 +153,15 @@ async def upload_image(file: UploadFile = File(...)):
                     "role": "system",
                     "content": (
                         "You are an agricultural plant disease expert. "
-                        "Reply ONLY in Hindi using Devanagari script, exactly one short sentence. "
+                        f"Reply ONLY in {get_language(lang)['prompt']}, exactly one short sentence. "
                         "No explanation, no extra words."
                     )
                 },
                 {
                     "role": "user",
                     "content": (
-                        "फसल में रोग की पहचान अभी उपलब्ध नहीं है। "
-                        "कृपया किसान को एक सामान्य सलाह दें कि वे अपनी फसल की सुरक्षा के लिए क्या करें।"
+                        "Crop disease detection from photos is not available yet. "
+                        "Give the farmer one general tip on what to do to protect their crop."
                     )
                 }
             ],
@@ -151,7 +180,7 @@ async def upload_image(file: UploadFile = File(...)):
         return JSONResponse(
             content={
                 "status": "success",
-                "result": f"⚠️ छवि विश्लेषण अभी उपलब्ध नहीं है। सुझाव: {result_text}",
+                "result": f"{IMAGE_UNAVAILABLE_PREFIX.get(lang, IMAGE_UNAVAILABLE_PREFIX[DEFAULT_LANG])} {result_text}",
             }
         )
     except Exception as e:
@@ -160,11 +189,11 @@ async def upload_image(file: UploadFile = File(...)):
 
 # ── Voice Chat: STT + LLM pipeline ────────────────────────────────────────────
 @app.post("/api/voice-chat")
-async def voice_chat(file: UploadFile = File(...)):
+async def voice_chat(file: UploadFile = File(...), lang: str = Form(DEFAULT_LANG)):
     """
     Accepts audio from the browser mic, transcribes it via Groq Whisper,
     sends the transcription to the LLM, and returns the text response.
-    Browser handles Hindi TTS via Web Speech API.
+    The browser speaks the reply (Web Speech API, or /api/tts as fallback).
     """
     logger.info("Voice chat request received: %s", file.filename)
 
@@ -179,7 +208,7 @@ async def voice_chat(file: UploadFile = File(...)):
         transcription = client.audio.transcriptions.create(
             file=(file.filename or "recording.webm", contents),
             model="whisper-large-v3-turbo",
-            language="hi",
+            language=get_language(lang)["whisper"],
         )
         user_text = transcription.text.strip()
         logger.info("STT result: %s", user_text)
@@ -195,8 +224,8 @@ async def voice_chat(file: UploadFile = File(...)):
                 {
                     "role": "system",
                     "content": (
-                        "You are Kisan Mitra, a helpful Hindi-speaking agricultural assistant. "
-                        "Always respond in Hindi using Devanagari script. "
+                        "You are Kisan Mitra, a helpful agricultural assistant. "
+                        f"{language_rule(lang)} "
                         "Keep responses concise (2-3 sentences max). "
                         "Be friendly and practical."
                     ),
@@ -229,6 +258,37 @@ async def voice_chat(file: UploadFile = File(...)):
     except Exception as e:
         logger.error("Voice chat error: %s", str(e), exc_info=True)
         raise HTTPException(status_code=500, detail=f"Voice processing error: {str(e)}")
+
+
+# ── Text-to-Speech fallback ───────────────────────────────────────────────────
+# Most desktop browsers (and many phones) ship no Punjabi voice for the
+# Web Speech API, so the frontend falls back to this endpoint (MP3 via gTTS)
+# whenever the browser has no voice for the selected language.
+TTS_MAX_CHARS = 3000
+
+
+class TTSRequest(BaseModel):
+    text: str
+    lang: str = DEFAULT_LANG
+
+
+@app.post("/api/tts")
+async def text_to_speech(req: TTSRequest):
+    text = req.text.strip()[:TTS_MAX_CHARS]
+    if not text:
+        raise HTTPException(status_code=400, detail="No text to speak.")
+
+    def synthesize() -> bytes:
+        buf = io.BytesIO()
+        gTTS(text=text, lang=get_language(req.lang)["tts"]).write_to_fp(buf)
+        return buf.getvalue()
+
+    try:
+        audio = await asyncio.to_thread(synthesize)
+    except Exception as e:
+        logger.error("TTS error: %s", str(e), exc_info=True)
+        raise HTTPException(status_code=502, detail=f"TTS error: {str(e)}")
+    return Response(content=audio, media_type="audio/mpeg")
 
 
 if __name__ == "__main__":

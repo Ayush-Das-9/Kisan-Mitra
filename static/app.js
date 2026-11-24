@@ -6,6 +6,161 @@
 (function () {
     'use strict';
 
+    // ===== TRANSLATIONS =====
+    const translations = {
+        hi: {
+            tagline: 'आपका डिजिटल कृषि सहायक',
+            voiceBtnLabel: 'मेनू सुनें',
+            voiceBtnStop: 'रुकें',
+            displayLabel: 'नंबर दर्ज करें',
+            displayIdle: 'शुरू करने के लिए नंबर दबाएं',
+            displayReady: '✓ दबाएं पुष्टि के लिए या C दबाएं मिटाने के लिए',
+            loading: (label) => `<span class="loading-dots"><strong>${label}</strong> के बारे में पूछ रहे हैं...</span>`,
+            voiceListening: '<span class="loading-dots"><strong>बोलिए...</strong> रुकने के लिए ✓ दबाएं</span>',
+            voiceProcessing: '<span class="loading-dots">आपकी आवाज़ समझ रहे हैं...</span>',
+            voiceYouSaid: 'आपने कहा: ',
+            errorInvalid: (opt) => `विकल्प "${opt}" उपलब्ध नहीं है। कृपया 1 से 9 के बीच नंबर दर्ज करें।`,
+            errorMic: 'माइक्रोफ़ोन की अनुमति नहीं मिली। कृपया अनुमति दें।',
+            errorGeneric: (msg) => `त्रुटि: ${msg}। कृपया पुनः प्रयास करें।`,
+            footer: 'किसान मित्र © 2026 — किसानों को सशक्त बनाना',
+            greetingText: 'किसान मित्र में आपका स्वागत है, आपका किसान सहायक।',
+            greetingMenu: 'विकल्प 1: गेंहू के फसल की जानकारी। विकल्प 2: किसान समाचार। विकल्प 3: कपास उर्वरक। विकल्प 4: मंडी भाव। विकल्प 5: मौसम जानकारी। विकल्प 6: फसल रोग। विकल्प 7: सिंचाई सुझाव। विकल्प 8: फोटो से रोग पहचान। विकल्प 9: AI से बात करें।',
+            menu: {
+                '1': { label: 'गेंहू के फसल की जानकारी', icon: '🌾' },
+                '2': { label: 'किसान समाचार', icon: '📰' },
+                '3': { label: 'कपास की खेती में उपयोग होने वाले उर्वरक', icon: '🧪' },
+                '4': { label: 'आज का मंडी भाव', icon: '💰' },
+                '5': { label: 'मौसम की जानकारी', icon: '🌤️' },
+                '6': { label: 'फसल रोग पहचान', icon: '🔬' },
+                '7': { label: 'सिंचाई के सुझाव', icon: '💧' },
+                '8': { label: 'फोटो से रोग पहचान', icon: '📷' },
+                '9': { label: 'AI से बात करें', icon: '🎙️' },
+            },
+            ticker: [
+                '1. गेंहू के फसल की जानकारी',
+                '2. किसान समाचार',
+                '3. कपास की खेती में उपयोग होने वाले उर्वरक',
+                '4. आज का मंडी भाव',
+                '5. मौसम की जानकारी',
+                '6. फसल रोग पहचान',
+                '7. सिंचाई के सुझाव',
+                '8. फोटो से रोग पहचान',
+                '9. AI से बात करें',
+            ],
+        },
+        pa: {
+            tagline: 'ਤੁਹਾਡਾ ਡਿਜੀਟਲ ਖੇਤੀਬਾੜੀ ਸਹਾਇਕ',
+            voiceBtnLabel: 'ਮੀਨੂ ਸੁਣੋ',
+            voiceBtnStop: 'ਰੁਕੋ',
+            displayLabel: 'ਨੰਬਰ ਦਰਜ ਕਰੋ',
+            displayIdle: 'ਸ਼ੁਰੂ ਕਰਨ ਲਈ ਨੰਬਰ ਦਬਾਓ',
+            displayReady: '✓ ਦਬਾਓ ਪੁਸ਼ਟੀ ਲਈ ਜਾਂ C ਦਬਾਓ ਮਿਟਾਉਣ ਲਈ',
+            loading: (label) => `<span class="loading-dots"><strong>${label}</strong> ਬਾਰੇ ਪੁੱਛ ਰਹੇ ਹਾਂ...</span>`,
+            voiceListening: '<span class="loading-dots"><strong>ਬੋਲੋ...</strong> ਰੁਕਣ ਲਈ ✓ ਦਬਾਓ</span>',
+            voiceProcessing: '<span class="loading-dots">ਤੁਹਾਡੀ ਆਵਾਜ਼ ਸਮਝ ਰਹੇ ਹਾਂ...</span>',
+            voiceYouSaid: 'ਤੁਸੀਂ ਕਿਹਾ: ',
+            errorInvalid: (opt) => `ਵਿਕਲਪ "${opt}" ਉਪਲਬਧ ਨਹੀਂ। ਕਿਰਪਾ ਕਰਕੇ 1 ਤੋਂ 9 ਵਿੱਚੋਂ ਨੰਬਰ ਦਰਜ ਕਰੋ।`,
+            errorMic: 'ਮਾਈਕ੍ਰੋਫ਼ੋਨ ਦੀ ਇਜਾਜ਼ਤ ਨਹੀਂ ਮਿਲੀ। ਕਿਰਪਾ ਕਰਕੇ ਇਜਾਜ਼ਤ ਦਿਓ।',
+            errorGeneric: (msg) => `ਗਲਤੀ: ${msg}। ਕਿਰਪਾ ਕਰਕੇ ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।`,
+            footer: 'ਕਿਸਾਨ ਮਿੱਤਰ © 2026 — ਕਿਸਾਨਾਂ ਨੂੰ ਸਸ਼ਕਤ ਬਣਾਉਣਾ',
+            greetingText: 'ਕਿਸਾਨ ਮਿੱਤਰ ਵਿੱਚ ਤੁਹਾਡਾ ਸੁਆਗਤ ਹੈ, ਤੁਹਾਡਾ ਕਿਸਾਨ ਸਹਾਇਕ।',
+            greetingMenu: 'ਵਿਕਲਪ 1: ਕਣਕ ਦੀ ਫ਼ਸਲ। ਵਿਕਲਪ 2: ਕਿਸਾਨ ਖ਼ਬਰਾਂ। ਵਿਕਲਪ 3: ਕਪਾਹ ਖਾਦ। ਵਿਕਲਪ 4: ਮੰਡੀ ਭਾਅ। ਵਿਕਲਪ 5: ਮੌਸਮ। ਵਿਕਲਪ 6: ਫ਼ਸਲ ਰੋਗ। ਵਿਕਲਪ 7: ਸਿੰਚਾਈ। ਵਿਕਲਪ 8: ਫ਼ੋਟੋ ਤੋਂ ਰੋਗ। ਵਿਕਲਪ 9: AI ਨਾਲ ਗੱਲ ਕਰੋ।',
+            menu: {
+                '1': { label: 'ਕਣਕ ਦੀ ਫ਼ਸਲ ਦੀ ਜਾਣਕਾਰੀ', icon: '🌾' },
+                '2': { label: 'ਕਿਸਾਨ ਖ਼ਬਰਾਂ', icon: '📰' },
+                '3': { label: 'ਕਪਾਹ ਦੀ ਖੇਤੀ ਲਈ ਖਾਦ', icon: '🧪' },
+                '4': { label: 'ਅੱਜ ਦਾ ਮੰਡੀ ਭਾਅ', icon: '💰' },
+                '5': { label: 'ਮੌਸਮ ਦੀ ਜਾਣਕਾਰੀ', icon: '🌤️' },
+                '6': { label: 'ਫ਼ਸਲ ਰੋਗ ਪਛਾਣ', icon: '🔬' },
+                '7': { label: 'ਸਿੰਚਾਈ ਦੇ ਸੁਝਾਅ', icon: '💧' },
+                '8': { label: 'ਫ਼ੋਟੋ ਤੋਂ ਰੋਗ ਪਛਾਣ', icon: '📷' },
+                '9': { label: 'AI ਨਾਲ ਗੱਲ ਕਰੋ', icon: '🎙️' },
+            },
+            ticker: [
+                '1. ਕਣਕ ਦੀ ਫ਼ਸਲ ਦੀ ਜਾਣਕਾਰੀ',
+                '2. ਕਿਸਾਨ ਖ਼ਬਰਾਂ',
+                '3. ਕਪਾਹ ਦੀ ਖੇਤੀ ਲਈ ਖਾਦ',
+                '4. ਅੱਜ ਦਾ ਮੰਡੀ ਭਾਅ',
+                '5. ਮੌਸਮ ਦੀ ਜਾਣਕਾਰੀ',
+                '6. ਫ਼ਸਲ ਰੋਗ ਪਛਾਣ',
+                '7. ਸਿੰਚਾਈ ਦੇ ਸੁਝਾਅ',
+                '8. ਫ਼ੋਟੋ ਤੋਂ ਰੋਗ ਪਛਾਣ',
+                '9. AI ਨਾਲ ਗੱਲ ਕਰੋ',
+            ],
+        },
+        en: {
+            tagline: 'Your Digital Farming Assistant',
+            voiceBtnLabel: 'Hear Menu',
+            voiceBtnStop: 'Stop',
+            displayLabel: 'Enter Number',
+            displayIdle: 'Press a number to start',
+            displayReady: 'Press ✓ to confirm or C to clear',
+            loading: (label) => `<span class="loading-dots">Asking about <strong>${label}</strong>...</span>`,
+            voiceListening: '<span class="loading-dots"><strong>Speak now...</strong> Press ✓ to stop</span>',
+            voiceProcessing: '<span class="loading-dots">Understanding your voice...</span>',
+            voiceYouSaid: 'You said: ',
+            errorInvalid: (opt) => `Option "${opt}" is not available. Please enter a number between 1 and 9.`,
+            errorMic: 'Microphone permission denied. Please allow access.',
+            errorGeneric: (msg) => `Error: ${msg}. Please try again.`,
+            footer: 'Kisan Mitra © 2026 — Empowering Farmers',
+            greetingText: 'Welcome to Kisan Mitra, your farming assistant.',
+            greetingMenu: 'Option 1: Wheat crop info. Option 2: Farmer news. Option 3: Cotton fertilizers. Option 4: Market prices. Option 5: Weather. Option 6: Crop disease. Option 7: Irrigation tips. Option 8: Photo disease detection. Option 9: Talk to AI.',
+            menu: {
+                '1': { label: 'Wheat Crop Information', icon: '🌾' },
+                '2': { label: 'Farmer News', icon: '📰' },
+                '3': { label: 'Cotton Farming Fertilizers', icon: '🧪' },
+                '4': { label: "Today's Market Price", icon: '💰' },
+                '5': { label: 'Weather Information', icon: '🌤️' },
+                '6': { label: 'Crop Disease Detection', icon: '🔬' },
+                '7': { label: 'Irrigation Tips', icon: '💧' },
+                '8': { label: 'Photo Disease Detection', icon: '📷' },
+                '9': { label: 'Talk to AI', icon: '🎙️' },
+            },
+            ticker: [
+                '1. Wheat Crop Information',
+                '2. Farmer News',
+                '3. Cotton Farming Fertilizers',
+                "4. Today's Market Price",
+                '5. Weather Information',
+                '6. Crop Disease Detection',
+                '7. Irrigation Tips',
+                '8. Photo Disease Detection',
+                '9. Talk to AI',
+            ],
+        },
+    };
+
+    // ===== ACTIVE LANGUAGE =====
+    let lang = 'hi';
+    let t = translations[lang];
+
+    // ===== LANGUAGE CHOOSER =====
+    const langChooser = document.getElementById('lang-chooser');
+    const appContainer = document.getElementById('app-container');
+
+    document.querySelectorAll('.lang-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            lang = this.dataset.lang;
+            t = translations[lang];
+            unlockAudio();
+            document.getElementById('html-root').lang = lang;
+            langChooser.style.display = 'none';
+            appContainer.style.display = '';
+            applyTranslations();
+            tickerItems = t.ticker.slice();
+            tickerIndex = 0;
+            tickerElement.innerText = tickerItems[0];
+            updateDisplay();
+        });
+    });
+
+    function applyTranslations() {
+        document.querySelector('.tagline').textContent = t.tagline;
+        document.getElementById('voice-btn-label').textContent = t.voiceBtnLabel;
+        document.querySelector('.display-label').textContent = t.displayLabel;
+        document.querySelector('.app-footer p').textContent = t.footer;
+    }
+
     // ===== DOM REFERENCES =====
     const displayValue = document.getElementById('display-value');
     const displayStatus = document.getElementById('display-status');
@@ -25,32 +180,11 @@
     let mediaRecorder = null;
     let audioChunks = [];
 
-    const menuMeta = {
-        '1': { label: 'गेंहू के फसल की जानकारी', icon: '🌾' },
-        // '1' : { label: 'AI से बात करें', icon: '🎙️' },
-        '2': { label: 'किसान समाचार', icon: '📰' },
-        '3': { label: 'कपास की खेती में उपयोग होने वाले उर्वरक', icon: '🧪' },
-        '4': { label: 'आज का मंडी भाव', icon: '💰' },
-        '5': { label: 'मौसम की जानकारी', icon: '🌤️' },
-        '6': { label: 'फसल रोग पहचान', icon: '🔬' },
-        '7': { label: 'सिंचाई के सुझाव', icon: '💧' },
-        '8': { label: 'फोटो से रोग पहचान', icon: '📷' },
-        '9': { label: 'AI से बात करें', icon: '🎙️' },
-    };
-    
+    // menuMeta is derived from active translation
+    function getMenuMeta() { return t.menu; }
+
     // ===== TICKER =====
-    const tickerItems = [
-        // '1. AI से बात करें',
-        '1. गेंहू के फसल की जानकारी',
-        '2. किसान समाचार',
-        '3. कपास की खेती में उपयोग होने वाले उर्वरक',
-        '4. आज का मंडी भाव',
-        '5. मौसम की जानकारी',
-        '6. फसल रोग पहचान',
-        '7. सिंचाई के सुझाव',
-        '8. फोटो से रोग पहचान',
-        '9. AI से बात करें',
-    ];
+    let tickerItems = t.ticker.slice();
     let tickerIndex = 0;
 
     setInterval(() => {
@@ -75,19 +209,19 @@
         displayValue.classList.add('pop');
 
         if (currentInput) {
-            displayStatus.textContent = '✓ दबाएं पुष्टि के लिए या C दबाएं मिटाने के लिए';
+            displayStatus.textContent = t.displayReady;
             displayStatus.classList.add('active');
         } else {
-            displayStatus.textContent = 'शुरू करने के लिए नंबर दबाएं';
+            displayStatus.textContent = t.displayIdle;
             displayStatus.classList.remove('active');
         }
 
     }
 
     function showLoading(option) {
-        const meta = menuMeta[option] || { icon: '⏳', label: 'लोड हो रहा है' };
+        const meta = getMenuMeta()[option] || { icon: '⏳', label: t.displayIdle };
         responseIcon.textContent = '⏳';
-        responseText.innerHTML = `<span class="loading-dots"><strong>${meta.label}</strong> के बारे में पूछ रहे हैं...</span>`;
+        responseText.innerHTML = t.loading(meta.label);
         responseArea.classList.remove('hidden');
         responseArea.style.animation = 'none';
         void responseArea.offsetWidth;
@@ -95,7 +229,7 @@
     }
 
     function showResponse(option, text) {
-        const meta = menuMeta[option] || { icon: '💬' };
+        const meta = getMenuMeta()[option] || { icon: '💬' };
         responseIcon.textContent = meta.icon;
         responseText.textContent = text;
         responseArea.classList.remove('hidden');
@@ -141,8 +275,8 @@
         const option = currentInput;
 
         // Only valid options 1–9 call Groq
-        if (!menuMeta[option]) {
-            showError(`विकल्प "${option}" उपलब्ध नहीं है। कृपया 1 से 9 के बीच नंबर दर्ज करें।`);
+        if (!getMenuMeta()[option]) {
+            showError(t.errorInvalid(option));
             currentInput = '';
             updateDisplay();
             return;
@@ -171,17 +305,17 @@
         updateDisplay();
 
         try {
-            const res = await fetch(`/api/menu/${option}`);
+            const res = await fetch(`/api/menu/${option}?lang=${encodeURIComponent(lang)}`);
             if (!res.ok) {
                 const err = await res.json();
                 throw new Error(err.detail || 'Server error');
             }
             const data = await res.json();
             showResponse(option, data.result);
-            // Read the Hindi response aloud
-            speakHindi(data.result);
+            // Read the response aloud in the selected language
+            speak(data.result);
         } catch (err) {
-            showError(`त्रुटि: ${err.message}। कृपया पुनः प्रयास करें।`);
+            showError(t.errorGeneric(err.message));
         } finally {
             isLoading = false;
             setNumpadDisabled(false);
@@ -209,6 +343,7 @@
             try {
                 const formData = new FormData();
                 formData.append('file', file);
+                formData.append('lang', lang);
 
                 const res = await fetch('/api/upload-image', {
                     method: 'POST',
@@ -220,9 +355,9 @@
                 }
                 const data = await res.json();
                 showResponse('8', data.result);
-                speakHindi(data.result);
+                speak(data.result);
             } catch (err) {
-                showError(`त्रुटि: ${err.message}। कृपया पुनः प्रयास करें।`);
+                showError(t.errorGeneric(err.message));
             } finally {
                 isLoading = false;
                 setNumpadDisabled(false);
@@ -267,7 +402,7 @@
 
             // Show recording UI
             responseIcon.textContent = '🎙️';
-            responseText.innerHTML = '<span class="loading-dots"><strong>बोलिए...</strong> रुकने के लिए ✓ दबाएं</span>';
+            responseText.innerHTML = t.voiceListening;
             responseArea.classList.remove('hidden');
             document.getElementById('display-area').classList.add('recording');
             const btnSubmit = document.getElementById('btn-submit');
@@ -275,7 +410,7 @@
 
         } catch (err) {
             console.error('Mic access error:', err);
-            showError('माइक्रोफ़ोन की अनुमति नहीं मिली। कृपया अनुमति दें।');
+            showError(t.errorMic);
         }
     }
 
@@ -295,11 +430,12 @@
         setNumpadDisabled(true);
 
         responseIcon.textContent = '⏳';
-        responseText.innerHTML = '<span class="loading-dots">आपकी आवाज़ समझ रहे हैं...</span>';
+        responseText.innerHTML = t.voiceProcessing;
 
         try {
             const formData = new FormData();
             formData.append('file', audioBlob, 'recording.webm');
+            formData.append('lang', lang);
 
             const res = await fetch('/api/voice-chat', {
                 method: 'POST',
@@ -316,16 +452,16 @@
             // Show transcription + response
             responseIcon.textContent = '🎙️';
             responseText.innerHTML =
-                '<div style="margin-bottom:8px;color:rgba(134,239,172,0.6);font-size:0.85rem;">आपने कहा: ' +
+                '<div style="margin-bottom:8px;color:rgba(134,239,172,0.6);font-size:0.85rem;">' + t.voiceYouSaid +
                 data.transcription + '</div>' +
                 '<div>' + data.response + '</div>';
             responseArea.classList.remove('hidden');
 
-            // Speak the response in Hindi
-            speakHindi(data.response);
+            // Speak the response in the selected language
+            speak(data.response);
 
         } catch (err) {
-            showError(`त्रुटि: ${err.message}। कृपया पुनः प्रयास करें।`);
+            showError(t.errorGeneric(err.message));
         } finally {
             isLoading = false;
             setNumpadDisabled(false);
@@ -390,73 +526,156 @@
         lastTap = now;
     }, { passive: false });
 
-    // ===== VOICE / TTS (Web Speech API — Hindi) =====
+    // ===== VOICE / TTS (selected language) =====
+    // Uses a browser voice for the selected language when one exists.
+    // Most desktop browsers have no Punjabi voice, so we fall back to
+    // server-generated MP3 audio from /api/tts.
     const voiceBtn = document.getElementById('voice-greeting-btn');
     const voiceBtnIcon = document.getElementById('voice-btn-icon');
     const voiceBtnLabel = document.getElementById('voice-btn-label');
     let isSpeaking = false;
 
-    // Pick the best Hindi voice available
-    function getHindiVoice() {
+    const SPEECH_LANG = { hi: 'hi-IN', pa: 'pa-IN', en: 'en-IN' };
+    const hasSpeechSynthesis = 'speechSynthesis' in window;
+
+    // Pick the best browser voice for the active language, or null if none
+    function getVoiceForLang() {
+        if (!hasSpeechSynthesis) return null;
+        const code = SPEECH_LANG[lang];
         const voices = window.speechSynthesis.getVoices();
-        return voices.find(v => v.lang === 'hi-IN' && v.name.includes('Google'))
-            || voices.find(v => v.lang === 'hi-IN')
-            || voices.find(v => v.lang.startsWith('hi'))
+        const norm = v => v.lang.replace('_', '-').toLowerCase();
+        return voices.find(v => norm(v) === code.toLowerCase() && v.name.includes('Google'))
+            || voices.find(v => norm(v) === code.toLowerCase())
+            || voices.find(v => norm(v).startsWith(lang + '-') || norm(v) === lang)
             || null;
     }
 
-    // General-purpose Hindi TTS helper
-    function speakHindi(text, onEnd) {
-        if (!('speechSynthesis' in window)) return;
+    // --- Server TTS fallback (one shared <audio>, queued like speechSynthesis) ---
+    const ttsAudio = new Audio();
+    let ttsQueue = [];
+    let ttsPlaying = false;
+    let ttsGeneration = 0;     // bumped on stop, so in-flight audio is discarded
+    let ttsObjectUrl = null;
+
+    function fetchServerTTS(text, forLang) {
+        return fetch('/api/tts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: text, lang: forLang }),
+        }).then(res => {
+            if (!res.ok) throw new Error('TTS request failed (' + res.status + ')');
+            return res.blob();
+        });
+    }
+
+    function speakViaServer(text, onEnd) {
+        // Start fetching right away so queued items play back-to-back
+        ttsQueue.push({ blob: fetchServerTTS(text, lang), onEnd: onEnd });
+        if (!ttsPlaying) playNextServerTTS();
+    }
+
+    async function playNextServerTTS() {
+        const item = ttsQueue.shift();
+        if (!item) { ttsPlaying = false; return; }
+        ttsPlaying = true;
+        const gen = ttsGeneration;
+        let finished = false;
+        const done = () => {
+            if (finished || gen !== ttsGeneration) return;
+            finished = true;
+            if (item.onEnd) item.onEnd();
+            playNextServerTTS();
+        };
+        try {
+            const blob = await item.blob;
+            if (gen !== ttsGeneration) return;
+            if (ttsObjectUrl) URL.revokeObjectURL(ttsObjectUrl);
+            ttsObjectUrl = URL.createObjectURL(blob);
+            ttsAudio.onended = done;
+            ttsAudio.onerror = done;
+            ttsAudio.src = ttsObjectUrl;
+            await ttsAudio.play();
+        } catch (err) {
+            console.error('Server TTS failed:', err);
+            done();
+        }
+    }
+
+    // iOS Safari only lets an <audio> play later if it was first played
+    // inside a tap, so prime the shared element on the language-button tap.
+    function unlockAudio() {
+        ttsAudio.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
+        ttsAudio.play().catch(() => {});
+    }
+
+    // Speak text in the active language
+    function speak(text, onEnd) {
+        if (!text) { if (onEnd) onEnd(); return; }
+        const voice = getVoiceForLang();
+        if (!voice) {
+            speakViaServer(text, onEnd);
+            return;
+        }
         const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'hi-IN';
+        utterance.lang = SPEECH_LANG[lang];
+        utterance.voice = voice;
         utterance.rate = 0.95;
         utterance.pitch = 1.0;
         utterance.volume = 1;
-        const hindiVoice = getHindiVoice();
-        if (hindiVoice) utterance.voice = hindiVoice;
         if (onEnd) utterance.onend = onEnd;
         window.speechSynthesis.speak(utterance);
     }
 
+    function cancelAllSpeech() {
+        if (hasSpeechSynthesis) window.speechSynthesis.cancel();
+        ttsGeneration++;
+        ttsQueue = [];
+        ttsPlaying = false;
+        ttsAudio.pause();
+    }
+
     // Stop any ongoing speech
     function stopSpeaking() {
-        window.speechSynthesis.cancel();
+        cancelAllSpeech();
         setSpeakingState(false);
     }
 
-    function speakGreeting() {
-        if (!('speechSynthesis' in window)) {
-            console.warn('SpeechSynthesis API not supported in this browser.');
+    // Run cb once browser voices are known (they load async in Chrome).
+    // Gives up waiting after a short timeout so the server fallback still works
+    // on browsers that never fire 'voiceschanged'.
+    function whenVoicesReady(cb) {
+        if (!hasSpeechSynthesis || window.speechSynthesis.getVoices().length > 0) {
+            cb();
             return;
         }
+        let called = false;
+        const run = () => {
+            if (called) return;
+            called = true;
+            window.speechSynthesis.removeEventListener('voiceschanged', run);
+            cb();
+        };
+        window.speechSynthesis.addEventListener('voiceschanged', run);
+        setTimeout(run, 1500);
+    }
 
+    function speakGreeting() {
         // Toggle off if already speaking
         if (isSpeaking) {
             stopSpeaking();
             return;
         }
 
-        window.speechSynthesis.cancel();
+        cancelAllSpeech();
         setSpeakingState(true);
 
-        const greetingText = 'किसान मित्र में आपका स्वागत है, आपका किसान सहायक।';
-        const menuText = 'विकल्प 1: गेंहू के फसल की जानकारी। विकल्प 2: किसान समाचार। विकल्प 3: कपास उर्वरक। विकल्प 4: मंडी भाव। विकल्प 5: मौसम जानकारी। विकल्प 6: फसल रोग। विकल्प 7: सिंचाई सुझाव। विकल्प 8: फोटो से रोग पहचान। विकल्प 9: AI से बात करें।';
+        const greetingText = t.greetingText;
+        const menuText = t.greetingMenu;
 
-        function doSpeak() {
-            speakHindi(greetingText);
-            speakHindi(menuText, () => setSpeakingState(false));
-        }
-
-        // Voices may load async
-        if (window.speechSynthesis.getVoices().length > 0) {
-            doSpeak();
-        } else {
-            window.speechSynthesis.addEventListener('voiceschanged', function handler() {
-                window.speechSynthesis.removeEventListener('voiceschanged', handler);
-                doSpeak();
-            });
-        }
+        whenVoicesReady(() => {
+            speak(greetingText);
+            speak(menuText, () => setSpeakingState(false));
+        });
     }
 
     function setSpeakingState(speaking) {
@@ -464,17 +683,19 @@
         if (speaking) {
             voiceBtn.classList.add('speaking');
             voiceBtnIcon.textContent = '⏹️';
-            voiceBtnLabel.textContent = 'रुकें';
+            voiceBtnLabel.textContent = t.voiceBtnStop;
         } else {
             voiceBtn.classList.remove('speaking');
             voiceBtnIcon.textContent = '🔊';
-            voiceBtnLabel.textContent = 'मेनू सुनें';
+            voiceBtnLabel.textContent = t.voiceBtnLabel;
         }
     }
 
     voiceBtn.addEventListener('click', speakGreeting);
 
     // ===== INIT =====
+    // Ask for voices early: Chrome loads them async and only after a first call
+    if (hasSpeechSynthesis) window.speechSynthesis.getVoices();
     updateDisplay();
 
 })();
