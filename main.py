@@ -1,5 +1,6 @@
 import base64
 import io
+import json
 import mimetypes
 import logging
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
@@ -85,12 +86,6 @@ PROMPTS = {
     "10": "Explain the Pradhan Mantri Fasal Bima Yojana in exactly 20 words in {language}, in simple and clear language.",
 }
 
-IMAGE_UNAVAILABLE_PREFIX = {
-    "hi": "⚠️ छवि विश्लेषण अभी उपलब्ध नहीं है। सुझाव:",
-    "pa": "⚠️ ਤਸਵੀਰ ਵਿਸ਼ਲੇਸ਼ਣ ਹਾਲੇ ਉਪਲਬਧ ਨਹੀਂ ਹੈ। ਸੁਝਾਅ:",
-    "en": "⚠️ Image analysis is not available yet. Tip:",
-}
-
 
 @app.get("/")
 async def root():
@@ -131,42 +126,61 @@ async def get_menu_response(option: str, lang: str = DEFAULT_LANG):
         raise HTTPException(status_code=500, detail=f"Groq API error: {str(e)}")
 
 
+# Groq rejects inline (base64) image requests over ~4 MB; the browser shrinks
+# photos to ~1024 px before upload, so this only trips on unusual uploads.
+MAX_IMAGE_BYTES = 3_500_000
+
+
 @app.post("/api/upload-image")
 async def upload_image(file: UploadFile = File(...), lang: str = Form(DEFAULT_LANG)):
     """
-    Accepts an image and returns a default advisory in the requested language.
-    Note: No vision model is currently available on this Groq account.
-    Using qwen/qwen3.8-27b (text-only) for a general advisory response.
+    Accepts a crop photo and asks the vision-capable Qwen model to identify the
+    disease or pest and suggest treatment, in the requested language.
     """
-    # Read the file to validate it's a real upload
     contents = await file.read()
     if len(contents) < 100:
         raise HTTPException(status_code=400, detail="अमान्य छवि फ़ाइल।")
+    if len(contents) > MAX_IMAGE_BYTES:
+        raise HTTPException(status_code=413, detail="फ़ोटो बहुत बड़ी है। कृपया छोटी फ़ोटो भेजें।")
+
+    mime = file.content_type if (file.content_type or "").startswith("image/") else (
+        mimetypes.guess_type(file.filename or "")[0] or "image/jpeg"
+    )
+    image_url = f"data:{mime};base64,{base64.b64encode(contents).decode('ascii')}"
 
     try:
-        # qwen3.8-27b is text-only; it cannot analyze the actual image.
-        # We ask it to give a general plant disease advisory in Hindi.
         completion = client.chat.completions.create(
             model="qwen/qwen3.8-27b",
             messages=[
                 {
                     "role": "system",
                     "content": (
-                        "You are an agricultural plant disease expert. "
-                        f"Reply ONLY in {get_language(lang)['prompt']}, exactly one short sentence. "
-                        "No explanation, no extra words."
-                    )
+                        "You are an expert plant pathologist helping Indian farmers. "
+                        f"{language_rule(lang)} "
+                        "Plain text only, no markdown or bullet points."
+                    ),
                 },
                 {
                     "role": "user",
-                    "content": (
-                        "Crop disease detection from photos is not available yet. "
-                        "Give the farmer one general tip on what to do to protect their crop."
-                    )
-                }
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": (
+                                "Look at this photo from a farmer. In about 40 words: name the crop, "
+                                "the most likely disease or pest (or say it looks healthy), and 1-2 "
+                                "practical treatment steps. If the photo does not show a plant or is "
+                                "too unclear to judge, say so and ask for a clear close-up of one "
+                                "affected leaf in daylight."
+                            ),
+                        },
+                        {"type": "image_url", "image_url": {"url": image_url}},
+                    ],
+                },
             ],
             temperature=0.6,
-            max_completion_tokens=100,
+            # Groq's on-demand tier refuses any request whose max output exceeds
+            # the account's 1000 output-tokens-per-minute limit; ~40 words needs ~200.
+            max_completion_tokens=500,
             top_p=0.95,
             reasoning_effort="default",
             stream=True,
@@ -175,25 +189,45 @@ async def upload_image(file: UploadFile = File(...), lang: str = Form(DEFAULT_LA
         result_text = ""
         for chunk in completion:
             result_text += chunk.choices[0].delta.content or ""
-        result_text = result_text.strip()
-
-        return JSONResponse(
-            content={
-                "status": "success",
-                "result": f"{IMAGE_UNAVAILABLE_PREFIX.get(lang, IMAGE_UNAVAILABLE_PREFIX[DEFAULT_LANG])} {result_text}",
-            }
-        )
+        return JSONResponse(content={"status": "success", "result": result_text.strip()})
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Groq API error: {str(e)}")
 
 
 # ── Voice Chat: STT + LLM pipeline ────────────────────────────────────────────
+MAX_HISTORY_MESSAGES = 10      # last 5 exchanges
+MAX_HISTORY_CHARS = 1000       # per message
+
+
+def parse_history(raw: str) -> list:
+    """Turn the client's JSON conversation history into safe chat messages."""
+    try:
+        items = json.loads(raw) if raw else []
+    except ValueError:
+        return []
+    if not isinstance(items, list):
+        return []
+    messages = []
+    for item in items[-MAX_HISTORY_MESSAGES:]:
+        if (isinstance(item, dict)
+                and item.get("role") in ("user", "assistant")
+                and isinstance(item.get("content"), str)):
+            messages.append({"role": item["role"], "content": item["content"][:MAX_HISTORY_CHARS]})
+    return messages
+
+
 @app.post("/api/voice-chat")
-async def voice_chat(file: UploadFile = File(...), lang: str = Form(DEFAULT_LANG)):
+async def voice_chat(
+    file: UploadFile = File(...),
+    lang: str = Form(DEFAULT_LANG),
+    history: str = Form(""),
+):
     """
     Accepts audio from the browser mic, transcribes it via Groq Whisper,
     sends the transcription to the LLM, and returns the text response.
     The browser speaks the reply (Web Speech API, or /api/tts as fallback).
+    `history` (optional JSON list of {role, content}) carries the earlier turns
+    of a live conversation so follow-up questions have context.
     """
     logger.info("Voice chat request received: %s", file.filename)
 
@@ -224,16 +258,21 @@ async def voice_chat(file: UploadFile = File(...), lang: str = Form(DEFAULT_LANG
                 {
                     "role": "system",
                     "content": (
-                        "You are Kisan Mitra, a helpful agricultural assistant. "
+                        "You are Kisan Mitra, a helpful agricultural assistant "
+                        "talking with a farmer in a live spoken conversation. "
                         f"{language_rule(lang)} "
                         "Keep responses concise (2-3 sentences max). "
-                        "Be friendly and practical."
+                        "Be friendly and practical. Plain text only, no markdown, "
+                        "because your reply is read aloud."
                     ),
                 },
+                *parse_history(history),
                 {"role": "user", "content": user_text},
             ],
             temperature=0.6,
-            max_completion_tokens=2048,
+            # Groq's on-demand tier refuses any request whose max output exceeds
+            # the account's 1000 output-tokens-per-minute limit.
+            max_completion_tokens=400,
             top_p=0.95,
             reasoning_effort="default",
             stream=True,

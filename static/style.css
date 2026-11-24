@@ -645,3 +645,25 @@ body::before {
 .lang-btn:active {
     transform: scale(0.96);
 }
+
+/* ===== LIVE CALL (option 9) ===== */
+.live-status {
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.live-you {
+    margin-bottom: 6px;
+    color: rgba(134, 239, 172, 0.6);
+    font-size: 0.85rem;
+}
+
+.live-ai {
+    margin-bottom: 8px;
+}
+
+.live-hint {
+    margin-top: 10px;
+    font-size: 0.75rem;
+    opacity: 0.6;
+}
